@@ -1,0 +1,11 @@
+server:
+  addr: "127.0.0.1:17000"     # 服务端监听本机端口（本地自测专用）
+  log_level: "debug"
+  token: "changeme"
+
+client:
+  name: "gotunnel-client-demo"  # 客户端自定义名称
+  token: "changeme"
+  server_addr: "127.0.0.1:17000" # 必须与 server 配置一致
+  local_ports: [2222]             # 本机sshd监听端口，如用默认22改成实际端口
+  # 注意每次只支持一个端口映射（如需多端口自定义/扩展相关代码）
