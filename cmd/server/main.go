@@ -91,7 +91,7 @@ func checkClientHeartbeat() {
 func handleControlConn(conn net.Conn, serverToken string) {
 	defer func() { _ = conn.Close() }()
 	var regdRemotePort, regdLocalPort int
-	var listenDone chan struct{} = nil
+	var listenDone chan struct{}
 	// 读取注册消息
 	firstPacket, err := protocol.ReadPacket(conn)
 	if err != nil {

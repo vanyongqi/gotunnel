@@ -132,7 +132,7 @@ func StartHeartbeat(conn net.Conn, interval time.Duration, onTimeout func()) (st
 }
 
 // StartHealthProbe starts a periodic health probe for the local port.
-func StartHealthProbe(conf *ClientConfig, conn net.Conn, onOffline func(), onOnline func()) (stop func()) {
+func StartHealthProbe(conf *ClientConfig, _ net.Conn, onOffline func(), onOnline func()) (stop func()) {
 	doneHealth := make(chan struct{})
 	go func() {
 		target := fmt.Sprintf("127.0.0.1:%d", conf.LocalPort)
@@ -143,7 +143,7 @@ func StartHealthProbe(conf *ClientConfig, conn net.Conn, onOffline func(), onOnl
 }
 
 // StartControlLoop starts the main control loop that handles server messages.
-func StartControlLoop(conn net.Conn, conf *ClientConfig) error {
+func StartControlLoop(conn net.Conn, _ *ClientConfig) error {
 	for {
 		packet, err := protocol.ReadPacket(conn)
 		if err != nil {
