@@ -1,3 +1,5 @@
+# gotunnel
+
 [![CI](https://github.com/vanyongqi/gotunnel/actions/workflows/test.yaml/badge.svg)](https://github.com/vanyongqi/gotunnel/actions)
 [![codecov](https://codecov.io/gh/vanyongqi/gotunnel/branch/main/graph/badge.svg)](https://codecov.io/gh/vanyongqi/gotunnel)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vanyongqi/gotunnel)](https://goreportcard.com/report/github.com/vanyongqi/gotunnel)
@@ -5,9 +7,26 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub release](https://img.shields.io/github/release/vanyongqi/gotunnel.svg)](https://github.com/vanyongqi/gotunnel/releases)
 [![GitHub stars](https://img.shields.io/github/stars/vanyongqi/gotunnel.svg?style=social&label=Star)](https://github.com/vanyongqi/gotunnel)
-# gotunnel
+
 
 gotunnel is a high-performance intranet penetration (Tunnel/Proxy) tool implemented in Go, inspired by frp and ngrok. It enables secure and efficient remote access and management of any number of internal network service nodes through cloud servers.
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="doc/gotunnel-http.gif" alt="gotunnel http demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
+        <div style="font-size:16px; margin-top:8px;">HTTP Demo</div>
+      </td>
+      <td align="center">
+        <img src="doc/gotunnel-ssh.gif" alt="gotunnel ssh demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
+        <div style="font-size:16px; margin-top:8px;">SSH Demo</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
 
 ## Quick Start
 
