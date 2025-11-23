@@ -196,9 +196,9 @@ func StartControlLoop(conn net.Conn, conf *ClientConfig) error {
 			go func(localPort int) {
 				startTime := time.Now()
 				// Establish a separate data channel connection
-				dataConn, err := net.Dial("tcp", conf.ServerAddr)
-				if err != nil {
-					log.Errorf("client", "client.connect_data_channel_failed", err)
+				dataConn, err2 := net.Dial("tcp", conf.ServerAddr)
+				if err2 != nil {
+					log.Errorf("client", "client.connect_data_channel_failed", err2)
 					return
 				}
 				defer func() {
@@ -216,14 +216,14 @@ func StartControlLoop(conn net.Conn, conf *ClientConfig) error {
 					Name:       conf.Name,
 				}
 				dataReqBytes, _ := json.Marshal(dataReq)
-				if err := protocol.WritePacket(dataConn, dataReqBytes); err != nil {
-					log.Errorf("client", "client.send_data_channel_reg_failed", err)
+				if err3 := protocol.WritePacket(dataConn, dataReqBytes); err3 != nil {
+					log.Errorf("client", "client.send_data_channel_reg_failed", err3)
 					return
 				}
 				// Read response
-				respBytes, err := protocol.ReadPacket(dataConn)
-				if err != nil {
-					log.Errorf("client", "client.read_data_channel_resp_failed", err)
+				respBytes, err4 := protocol.ReadPacket(dataConn)
+				if err4 != nil {
+					log.Errorf("client", "client.read_data_channel_resp_failed", err4)
 					return
 				}
 				var resp protocol.RegisterResponse

@@ -1,8 +1,8 @@
 # Binaries
 gotunnel-client
 gotunnel-server
-server
-client
+# server
+# client
 *.exe
 *.exe~
 *.dll
@@ -10,41 +10,3 @@ client
 *.dylib
 
 # Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool
-coverage.out
-coverage.html
-*.coverprofile
-
-# Dependency directories
-vendor/
-
-# Go workspace file
-go.work
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Build artifacts
-dist/
-build/
-bin/
-
-# Logs
-*.log
-
-# Local demo and test files
-local_demo/
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-config.yaml
-
