@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"gotunnel/pkg/core"
@@ -9,6 +10,9 @@ import (
 	"gotunnel/pkg/log"
 	"gotunnel/pkg/protocol"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/spf13/viper"
@@ -174,7 +178,7 @@ func StartHealthProbe(conf *ClientConfig, _ net.Conn, onOffline func(), onOnline
 }
 
 // StartControlLoop starts the main control loop that handles server messages.
-func StartControlLoop(conn net.Conn, _ *ClientConfig) error {
+func StartControlLoop(conn net.Conn, conf *ClientConfig) error {
 	for {
 		packet, err := protocol.ReadPacket(conn)
 		if err != nil {
@@ -188,13 +192,64 @@ func StartControlLoop(conn net.Conn, _ *ClientConfig) error {
 		_ = json.Unmarshal(packet, &ctrl)
 		if ctrl.Type == "open_data_channel" {
 			log.Infof("client", "client.data_channel_received", ctrl.LocalPort)
-			localConn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", ctrl.LocalPort))
-			if err != nil {
-				log.Errorf("client", "client.connect_local_failed", err)
-				continue
-			}
-			log.Debug("client", "client.relay_started", nil)
-			core.RelayConn(conn, localConn)
+			// Handle data channel establishment in a separate goroutine to avoid blocking control loop
+			go func(localPort int) {
+				startTime := time.Now()
+				// Establish a separate data channel connection
+				dataConn, err := net.Dial("tcp", conf.ServerAddr)
+				if err != nil {
+					log.Errorf("client", "client.connect_data_channel_failed", err)
+					return
+				}
+				defer func() {
+					// Close data connection if relay fails
+					_ = dataConn.Close()
+				}()
+				connectDuration := time.Since(startTime)
+				log.Debugf("client", "client.data_channel_dialed", connectDuration.Milliseconds())
+				// Send data channel registration (reuse register format but with data_channel type)
+				dataReq := protocol.RegisterRequest{
+					Type:       "data_channel",
+					LocalPort:  localPort,
+					RemotePort: conf.RemotePort,
+					Token:      conf.Token,
+					Name:       conf.Name,
+				}
+				dataReqBytes, _ := json.Marshal(dataReq)
+				if err := protocol.WritePacket(dataConn, dataReqBytes); err != nil {
+					log.Errorf("client", "client.send_data_channel_reg_failed", err)
+					return
+				}
+				// Read response
+				respBytes, err := protocol.ReadPacket(dataConn)
+				if err != nil {
+					log.Errorf("client", "client.read_data_channel_resp_failed", err)
+					return
+				}
+				var resp protocol.RegisterResponse
+				_ = json.Unmarshal(respBytes, &resp)
+				if resp.Status != "ok" {
+					log.Errorf("client", "client.data_channel_reg_failed", resp.Reason)
+					return
+				}
+				regDuration := time.Since(startTime)
+				log.Debugf("client", "client.data_channel_registered", regDuration.Milliseconds())
+				// Connect to local service
+				localAddr := fmt.Sprintf("127.0.0.1:%d", localPort)
+				log.Debugf("client", "client.connecting_local", localAddr)
+				localConn, err := net.Dial("tcp", localAddr)
+				if err != nil {
+					log.Errorf("client", "client.connect_local_failed", err)
+					_ = dataConn.Close()
+					return
+				}
+				totalDuration := time.Since(startTime)
+				log.Infof("client", "client.data_channel_ready", localPort, totalDuration.Milliseconds())
+				log.Debugf("client", "client.relay_starting", localPort)
+				// Relay on separate data channel connection
+				core.RelayConn(localConn, dataConn)
+				log.Debugf("client", "client.relay_finished", localPort)
+			}(ctrl.LocalPort)
 		}
 	}
 }
@@ -245,29 +300,88 @@ func main() {
 	// Initialize logger
 	log.Init(log.ParseLevel(conf.LogLevel), log.ParseLanguage(conf.LogLang))
 
-	log.Infof("client", "client.port_registered", conf.LocalPort, conf.RemotePort)
-	for {
-		conn, err := DialServer(conf)
-		if err != nil {
-			errors.PrintError(errors.ErrConnectFailed, err)
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		if err := RegisterPort(conn, conf); err != nil {
-			_ = conn.Close()
-			log.Errorf("client", "client.port_register_failed", err)
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		log.Info("client", "client.port_register_success", nil)
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		if err := handleConnection(conn, conf); err != nil {
-			log.Warnf("client", "client.control_channel_disconnected", err)
-			_ = conn.Close()
-			time.Sleep(3 * time.Second)
-			continue
+	// Setup signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Start reconnection loop in a goroutine
+	reconnectDone := make(chan struct{})
+	go func() {
+		defer close(reconnectDone)
+		log.Infof("client", "client.port_registered", conf.LocalPort, conf.RemotePort)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			conn, err := DialServer(conf)
+			if err != nil {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					errors.PrintError(errors.ErrConnectFailed, err)
+					time.Sleep(3 * time.Second)
+					continue
+				}
+			}
+
+			if err := RegisterPort(conn, conf); err != nil {
+				_ = conn.Close()
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					log.Errorf("client", "client.port_register_failed", err)
+					time.Sleep(3 * time.Second)
+					continue
+				}
+			}
+
+			log.Info("client", "client.port_register_success", nil)
+
+			// Handle connection in a goroutine so we can check for shutdown
+			connDone := make(chan struct{})
+			go func() {
+				defer close(connDone)
+				_ = handleConnection(conn, conf)
+			}()
+
+			// Wait for connection to close or shutdown signal
+			select {
+			case <-ctx.Done():
+				_ = conn.Close()
+				<-connDone
+				return
+			case <-connDone:
+				log.Warn("client", "client.control_channel_disconnected", nil)
+				_ = conn.Close()
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					time.Sleep(3 * time.Second)
+				}
+			}
 		}
-		_ = conn.Close()
-		time.Sleep(3 * time.Second)
-	}
+	}()
+
+	// Wait for shutdown signal
+	<-sigChan
+	log.Info("client", "client.shutdown_signal_received", nil)
+
+	// Start graceful shutdown
+	log.Info("client", "client.shutdown_started", nil)
+	cancel()
+
+	// Wait for reconnection loop to finish
+	<-reconnectDone
+
+	log.Info("client", "client.shutdown_complete", nil)
 }

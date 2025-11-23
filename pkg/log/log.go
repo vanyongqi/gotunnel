@@ -213,17 +213,30 @@ func argsToMap(args []interface{}) map[string]interface{} {
 				data["Arg1"] = arg
 			}
 		case 1:
-			if port, ok := arg.(int); ok {
-				if localPort, exists := data["Port"]; exists {
-					data["LocalPort"] = localPort
-					data["RemotePort"] = port
+			// Check for duration (int64 or int)
+			if duration, ok := arg.(int64); ok {
+				data["Duration"] = duration
+			} else if duration, ok := arg.(int); ok {
+				// Could be port or duration, check if first arg was port
+				if _, exists := data["Port"]; exists {
+					// First was port, this could be remote port or duration
+					// Set both to be safe
+					data["RemotePort"] = duration
+					data["Duration"] = duration
 				} else {
-					data["RemotePort"] = port
+					// First wasn't port, treat as duration
+					data["Duration"] = duration
 				}
 			} else if str, ok := arg.(string); ok {
 				data["Token"] = str
 			} else {
 				data["Arg2"] = arg
+				// Try to convert to int64 if possible
+				if val, ok := arg.(int64); ok {
+					data["Duration"] = val
+				} else if val, ok := arg.(int); ok {
+					data["Duration"] = val
+				}
 			}
 		default:
 			data[fmt.Sprintf("Arg%d", i+1)] = arg

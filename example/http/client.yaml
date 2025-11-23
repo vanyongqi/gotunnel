@@ -1,0 +1,28 @@
+# HTTP 演示场景 - 客户端配置
+# 将此文件复制到项目根目录作为 config.yaml（覆盖 server.yaml）
+
+server:
+  addr: "0.0.0.0:17000"
+  log_level: "info"
+  log_lang: "zh"
+  token: "http-demo-token"
+
+client:
+  name: "http-demo-client"
+  token: "http-demo-token"        # 必须与服务端 token 一致
+  server_addr: "YOUR_SERVER_IP:17000"  # ⚠️ 替换为服务端公网 IP
+  local_ports: [8080]             # 本地 HTTP 服务端口
+  remote_port: 18080             # 服务端对外暴露的端口
+  log_level: "info"
+  log_lang: "zh"
+  heartbeat_interval: 10         # 心跳间隔（秒）
+  health_check_interval: 30       # 健康检查间隔（秒）
+
+# 使用说明：
+# 1. 将 YOUR_SERVER_IP 替换为实际的服务端公网 IP
+# 2. 确保服务端防火墙开放 17000（控制通道）和 18080（数据通道）端口
+# 3. 确保本地 8080 端口有 HTTP 服务在运行
+# 4. 启动服务端：./gotunnel-server
+# 5. 启动客户端：./gotunnel-client
+# 6. 访问：http://YOUR_SERVER_IP:18080
+

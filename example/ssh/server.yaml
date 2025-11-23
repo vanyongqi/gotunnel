@@ -1,0 +1,9 @@
+# SSH 演示场景 - 服务端配置
+# 将此文件复制到项目根目录作为 config.yaml
+
+server:
+  addr: "0.0.0.0:17000"     # 监听所有网卡，允许远程连接
+  log_level: "info"          # 日志级别: debug/info/warn/error
+  log_lang: "zh"             # 日志语言: zh/en
+  token: "ssh-demo-token"    # 演示用 token，生产环境请使用强密码
+

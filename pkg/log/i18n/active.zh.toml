@@ -36,6 +36,18 @@ other = "监听端口失败: {{.Error}}"
 [server.send_data_channel_cmd_failed]
 other = "发送数据通道指令失败: {{.Error}}"
 
+[server.data_channel_timeout]
+other = "等待数据通道连接超时: 端口 {{.Port}}"
+
+[server.data_channel_established]
+other = "数据通道建立成功: 端口 {{.Port}}"
+
+[server.data_channel_no_mapping]
+other = "数据通道注册失败: 端口 {{.Port}} 映射不存在"
+
+[server.mapping_not_found]
+other = "映射不存在: 端口 {{.Port}}"
+
 [server.client_offline_port]
 other = "client请求下线端口 {{.Port}}"
 
@@ -78,6 +90,18 @@ other = "发送online_port失败: {{.Error}}"
 [client.data_channel_received]
 other = "收到数据通道指令，准备转发本地 {{.Port}}"
 
+[client.connect_data_channel_failed]
+other = "建立数据通道连接失败: {{.Error}}"
+
+[client.send_data_channel_reg_failed]
+other = "发送数据通道注册失败: {{.Error}}"
+
+[client.read_data_channel_resp_failed]
+other = "读取数据通道响应失败: {{.Error}}"
+
+[client.data_channel_reg_failed]
+other = "数据通道注册失败: {{.Arg1}}"
+
 [client.connect_local_failed]
 other = "[ERROR] 连接本地端口失败: {{.Error}}"
 
@@ -113,4 +137,52 @@ other = "端口注册失败: {{.Arg1}}"
 
 [error.payload_too_large]
 other = "消息体过大: {{.Size}} 字节，超过最大限制"
+
+[server.shutdown_signal_received]
+other = "收到关闭信号，开始优雅关闭..."
+
+[server.shutdown_started]
+other = "服务端正在关闭，停止接受新连接..."
+
+[server.shutdown_complete]
+other = "服务端已完全关闭"
+
+[server.closing_mapping]
+other = "正在关闭端口映射: {{.Port}}"
+
+[client.shutdown_signal_received]
+other = "收到关闭信号，开始优雅关闭..."
+
+[client.shutdown_started]
+other = "客户端正在关闭，停止重连..."
+
+[client.shutdown_complete]
+other = "客户端已完全关闭"
+
+[server.data_channel_connected]
+other = "数据通道已建立: 端口 {{.Port}}，等待耗时 {{.Duration}}ms"
+
+[client.data_channel_dialed]
+other = "数据通道连接建立: {{.Duration}}ms"
+
+[client.data_channel_registered]
+other = "数据通道注册完成: {{.Duration}}ms"
+
+[client.data_channel_ready]
+other = "数据通道就绪: 本地端口 {{.Port}}，总耗时 {{.Duration}}ms"
+
+[client.connecting_local]
+other = "正在连接本地服务: {{.Addr}}"
+
+[client.relay_starting]
+other = "开始转发数据: 本地端口 {{.Port}}"
+
+[client.relay_finished]
+other = "转发完成: 本地端口 {{.Port}}"
+
+[server.relay_starting]
+other = "开始转发数据: 远程端口 {{.Port}}"
+
+[server.relay_finished]
+other = "转发完成: 远程端口 {{.Port}}"
 

@@ -36,6 +36,18 @@ other = "Failed to listen on port: {{.Error}}"
 [server.send_data_channel_cmd_failed]
 other = "Failed to send data channel command: {{.Error}}"
 
+[server.data_channel_timeout]
+other = "Data channel connection timeout: port {{.Port}}"
+
+[server.data_channel_established]
+other = "Data channel established: port {{.Port}}"
+
+[server.data_channel_no_mapping]
+other = "Data channel registration failed: mapping for port {{.Port}} not found"
+
+[server.mapping_not_found]
+other = "Mapping not found: port {{.Port}}"
+
 [server.client_offline_port]
 other = "Client requested offline port {{.Port}}"
 
@@ -78,6 +90,18 @@ other = "Failed to send online_port: {{.Error}}"
 [client.data_channel_received]
 other = "Data channel command received, preparing to forward to local {{.Port}}"
 
+[client.connect_data_channel_failed]
+other = "Failed to establish data channel connection: {{.Error}}"
+
+[client.send_data_channel_reg_failed]
+other = "Failed to send data channel registration: {{.Error}}"
+
+[client.read_data_channel_resp_failed]
+other = "Failed to read data channel response: {{.Error}}"
+
+[client.data_channel_reg_failed]
+other = "Data channel registration failed: {{.Arg1}}"
+
 [client.connect_local_failed]
 other = "[ERROR] Failed to connect to local port: {{.Error}}"
 
@@ -113,4 +137,52 @@ other = "Port registration failed: {{.Arg1}}"
 
 [error.payload_too_large]
 other = "Payload too large: {{.Size}} bytes, exceeds maximum limit"
+
+[server.shutdown_signal_received]
+other = "Shutdown signal received, starting graceful shutdown..."
+
+[server.shutdown_started]
+other = "Server is shutting down, stopping new connections..."
+
+[server.shutdown_complete]
+other = "Server shutdown complete"
+
+[server.closing_mapping]
+other = "Closing port mapping: {{.Port}}"
+
+[client.shutdown_signal_received]
+other = "Shutdown signal received, starting graceful shutdown..."
+
+[client.shutdown_started]
+other = "Client is shutting down, stopping reconnection..."
+
+[client.shutdown_complete]
+other = "Client shutdown complete"
+
+[server.data_channel_connected]
+other = "Data channel established: port {{.Port}}, wait time {{.Duration}}ms"
+
+[client.data_channel_dialed]
+other = "Data channel dialed: {{.Duration}}ms"
+
+[client.data_channel_registered]
+other = "Data channel registered: {{.Duration}}ms"
+
+[client.data_channel_ready]
+other = "Data channel ready: local port {{.Port}}, total time {{.Duration}}ms"
+
+[client.connecting_local]
+other = "Connecting to local service: {{.Addr}}"
+
+[client.relay_starting]
+other = "Starting relay: local port {{.Port}}"
+
+[client.relay_finished]
+other = "Relay finished: local port {{.Port}}"
+
+[server.relay_starting]
+other = "Starting relay: remote port {{.Port}}"
+
+[server.relay_finished]
+other = "Relay finished: remote port {{.Port}}"
 

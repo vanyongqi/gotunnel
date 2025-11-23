@@ -72,6 +72,8 @@ func TestCheckClientHeartbeat(t *testing.T) {
 		ClientConn:    conn,
 		LocalPort:     22,
 		LastHeartbeat: time.Now().Add(-40 * time.Second), // 40秒前，超过30秒超时
+		ListenDone:    make(chan struct{}),
+		DataChan:      make(chan net.Conn, 10),
 	}
 	mappingTableMu.Unlock()
 
@@ -98,6 +100,8 @@ func TestCheckClientHeartbeat_NoTimeout(t *testing.T) {
 		ClientConn:    conn,
 		LocalPort:     22,
 		LastHeartbeat: time.Now(), // 刚刚更新
+		ListenDone:    make(chan struct{}),
+		DataChan:      make(chan net.Conn, 10),
 	}
 	mappingTableMu.Unlock()
 
@@ -186,6 +190,8 @@ func TestHandleControlConn_OfflinePort(t *testing.T) {
 		ClientConn:    conn,
 		LocalPort:     22,
 		LastHeartbeat: time.Now(),
+		ListenDone:    make(chan struct{}),
+		DataChan:      make(chan net.Conn, 10),
 	}
 	mappingTableMu.Unlock()
 
