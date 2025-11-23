@@ -8,76 +8,121 @@
 [![GitHub release](https://img.shields.io/github/release/vanyongqi/gotunnel.svg)](https://github.com/vanyongqi/gotunnel/releases)
 [![GitHub stars](https://img.shields.io/github/stars/vanyongqi/gotunnel.svg?style=social&label=Star)](https://github.com/vanyongqi/gotunnel)
 
+---
 
-gotunnel is a high-performance intranet penetration (Tunnel/Proxy) tool implemented in Go, inspired by frp and ngrok. It enables secure and efficient remote access and management of any number of internal network service nodes through cloud servers.
+<p align="center">
+  <img src="doc/image/homepage.jpg" alt="gotunnel UI Homepage Demo" width="600" style="border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.10);margin-bottom:12px;" />
+</p>
+
+## 🚀 Introduction
+
+**gotunnel** is a high-performance, secure, and easy-to-use intranet penetration (Tunnel/Proxy) tool written in Go. 
+Heavily inspired by [frp](https://github.com/fatedier/frp) and [ngrok](https://github.com/inconshreveable/ngrok). 
+It enables safe remote access and management of internal network services via a cloud relay server. Supports HTTP, TCP, SSH and more.
 
 <div align="center">
   <table>
     <tr>
       <td align="center">
-        <img src="doc/gotunnel-http.gif" alt="gotunnel http demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
+        <img src="doc/image/gotunnel-http.gif" alt="gotunnel http demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
         <div style="font-size:16px; margin-top:8px;">HTTP Demo</div>
       </td>
       <td align="center">
-        <img src="doc/gotunnel-ssh.gif" alt="gotunnel ssh demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
+        <img src="doc/image/gotunnel-ssh.gif" alt="gotunnel ssh demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
         <div style="font-size:16px; margin-top:8px;">SSH Demo</div>
       </td>
     </tr>
   </table>
 </div>
 
+---
 
 
-## Quick Start
 
+---
+
+## 🌟 Features
+- ⚡ Simple deployment, minimal configuration, fast relay
+- 🔒 Secure token-based authentication for all traffic
+- 🔁 Heartbeat & health check, auto online/offline
+- 🏷️ Multi-port & multi-client, support clustered mappings
+- 🔧 Flexible config, easy YAML manage
+- 📝 English/Chinese i18n logs, friendly debugging
+- 🖥️ Cross-platform build: Linux, Mac, Windows (x64)
+- 📦 GitHub Actions one-click Release (see workflows)
+
+---
+## 📦 Quick Start
+
+### 1. [Download Release](https://github.com/vanyongqi/gotunnel/releases)（or build locally）
+
+### 2. Start Your HTTP/SSH Service Locally
 ```bash
-# Build
-go build -o gotunnel-server ./cmd/server
-go build -o gotunnel-client ./cmd/client
-
-# Start server
-./gotunnel-server
-
-# Start client
-./gotunnel-client
+# HTTP Example (localhost:3111):
+python3 -m http.server 3111
+# SSH (default port 22, enable on Mac)
+sudo systemsetup -setremotelogin on
 ```
 
-## 📚 Documentation
+### 3. Config Sample
+See [`config_template.yaml`](config_template.yaml):
+```yaml
+server:
+  addr: "0.0.0.0:17000"
+  token: "your-token"
+client:
+  name: "myclient"
+  token: "your-token"
+  server_addr: "your-server-ip:17000"
+  local_ports: [3111]         # <== Your local service port
+  remote_port: 18080          # <== Public access port
+```
 
-Complete documentation is available in [doc/](./doc/) directory:
+### 4. Run
+```bash
+./gotunnel-server  # On remote/cloud server
+./gotunnel-client  # On your local machine
+```
 
-**Language:** [English](./doc/en/00-README.md) | [中文](./doc/zh/00-README.md)
+---
+## 🖥️ Architecture
 
-- **[Quick Start](./doc/en/01-QUICKSTART.md)** - Get started in 5 minutes
-- **[Configuration Guide](./doc/en/02-CONFIG.md)** - Detailed configuration options
-- **[Architecture Design](./doc/en/03-ARCHITECTURE.md)** - System architecture documentation
-- **[Protocol Documentation](./doc/en/04-PROTOCOL.md)** - Communication protocol details
-- **[Development Guide](./doc/en/05-DEVELOPMENT.md)** - Developer documentation
-- **[Troubleshooting Guide](./doc/en/06-TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Design Notes](./doc/en/07-DESIGN-NOTES.md)** - Design considerations and best practices
-- **[Kubernetes Deployment](./doc/en/08-K8S-DEPLOYMENT.md)** - K8s cross-network deployment guide
+```
+[ User ] <---> [Cloud Server: gotunnel-server] <--tunnel--> [LAN Client: gotunnel-client] --> [Local Service]
+```
 
-## Core Features
+---
+## 📺 Showcase
 
-- ✅ TCP/HTTP protocol tunneling support
-- ✅ Control channel + data channel separated architecture
-- ✅ Heartbeat keepalive + auto-reconnect mechanism
-- ✅ Port health probe + auto offline/online
-- ✅ Multi-client concurrent support
-- ✅ Complete unit tests (89% coverage)
+- **HTTP Demo:** see GIF above
+- **SSH Proxy:** see GIF above
+- **More examples:** [`example/`](example/) and [`local_demo/`](local_demo/)
 
-## Project Status
+---
+## ⬆️ CI/CD & Release
 
-- ✅ Phase 1: Core functionality implementation (Completed)
-- 🚧 Phase 2: Web Management UI (Planned)
-- 📋 Phase 3: Cloud-native extensions (Planned)
+- Supports manual one-click release action via Github Actions: cross-platform build and auto-upload assets ([release.yml](.github/workflows/release.yml))
+- Download latest binary & assets from [Releases](https://github.com/vanyongqi/gotunnel/releases)
 
-## Reference Projects
+---
+## 📖 Documentation
 
-- [frp](https://github.com/fatedier/frp) - High-performance reverse proxy application
-- [ngrok](https://ngrok.com) - Intranet penetration service
-- [lanproxy](https://github.com/ffay/lanproxy) - Java-based intranet penetration tool
+- [Quick Start](doc/01-QUICKSTART.md)
+- [Configuration Guide](doc/zh/02-CONFIG.md)
+- [Protocols](doc/zh/04-PROTOCOL.md)
+- [Bugfixes](doc/zh/09-BUGFIXES.md) / [Bugfixes EN](doc/en/09-BUGFIXES.md)
+- See [`doc/`](doc/) for more.
 
-## License
+---
+## 🙌 Contributing
 
-MIT License - see [LICENSE](LICENSE) file for details
+Pull requests, issues and feature suggestions are welcome!
+
+---
+## 💼 License
+
+MIT © 2023-2025 Richard & Contributors
+
+---
+## ⭐ Acknowledgements
+Inspired by frp, ngrok, contributors and users.
