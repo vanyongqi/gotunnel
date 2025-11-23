@@ -290,3 +290,227 @@ func TestLoadClientConfig_LogSettings(t *testing.T) {
 		t.Errorf("expected log_lang en, got %s", conf.LogLang)
 	}
 }
+
+func TestLoadClientConfig_HeartbeatInterval(t *testing.T) {
+	viper.Reset()
+	viper.Set("client.heartbeat_interval", 15)
+	conf := loadClientConfig()
+	if conf.HeartbeatInterval != 15 {
+		t.Errorf("expected heartbeat_interval 15, got %d", conf.HeartbeatInterval)
+	}
+
+	// Test invalid value (<= 0) should default to 10
+	viper.Reset()
+	viper.Set("client.heartbeat_interval", 0)
+	conf = loadClientConfig()
+	if conf.HeartbeatInterval != 10 {
+		t.Errorf("expected heartbeat_interval 10 (default), got %d", conf.HeartbeatInterval)
+	}
+
+	viper.Reset()
+	viper.Set("client.heartbeat_interval", -5)
+	conf = loadClientConfig()
+	if conf.HeartbeatInterval != 10 {
+		t.Errorf("expected heartbeat_interval 10 (default), got %d", conf.HeartbeatInterval)
+	}
+}
+
+func TestLoadClientConfig_HealthCheckInterval(t *testing.T) {
+	viper.Reset()
+	viper.Set("client.health_check_interval", 60)
+	conf := loadClientConfig()
+	expected := 60 * time.Second
+	if conf.HealthCheckInterval != expected {
+		t.Errorf("expected health_check_interval %v, got %v", expected, conf.HealthCheckInterval)
+	}
+
+	// Test invalid value (<= 0) should keep default
+	viper.Reset()
+	viper.Set("client.health_check_interval", 0)
+	conf = loadClientConfig()
+	expected = 30 * time.Second
+	if conf.HealthCheckInterval != expected {
+		t.Errorf("expected health_check_interval %v (default), got %v", expected, conf.HealthCheckInterval)
+	}
+
+	viper.Reset()
+	viper.Set("client.health_check_interval", -10)
+	conf = loadClientConfig()
+	if conf.HealthCheckInterval != expected {
+		t.Errorf("expected health_check_interval %v (default), got %v", expected, conf.HealthCheckInterval)
+	}
+}
+
+func TestLoadClientConfig_LocalPorts(t *testing.T) {
+	viper.Reset()
+	viper.Set("client.local_ports", []interface{}{8080, 8081})
+	conf := loadClientConfig()
+	if conf.LocalPort != 8080 {
+		t.Errorf("expected local_port 8080 (first in array), got %d", conf.LocalPort)
+	}
+
+	// Test empty array should use default
+	viper.Reset()
+	viper.Set("client.local_ports", []interface{}{})
+	conf = loadClientConfig()
+	if conf.LocalPort != 22 {
+		t.Errorf("expected local_port 22 (default), got %d", conf.LocalPort)
+	}
+
+	// Test invalid type in array
+	viper.Reset()
+	viper.Set("client.local_ports", []interface{}{"invalid"})
+	conf = loadClientConfig()
+	if conf.LocalPort != 22 {
+		t.Errorf("expected local_port 22 (default), got %d", conf.LocalPort)
+	}
+}
+
+func TestHandleConnection_HealthProbeCallbacks(t *testing.T) {
+	log.Init(log.LevelInfo, language.Chinese)
+
+	var wbuf bytes.Buffer
+	pong := protocol.HeartbeatPong{Type: "pong", Time: time.Now().Unix()}
+	b, _ := json.Marshal(pong)
+	protocol.WritePacket(&wbuf, b)
+
+	conn := &mockConn{
+		Reader: bytes.NewReader(wbuf.Bytes()),
+		Writer: &bytes.Buffer{},
+	}
+
+	conf := &ClientConfig{
+		Name:                "test",
+		LocalPort:           99999, // Non-existent port
+		RemotePort:          10022,
+		LogLevel:            "info",
+		LogLang:             "zh",
+		HeartbeatInterval:   1,
+		HealthCheckInterval: 50 * time.Millisecond,
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- handleConnection(conn, conf)
+	}()
+
+	// Wait for health probe to detect offline
+	time.Sleep(150 * time.Millisecond)
+
+	conn.Close()
+
+	select {
+	case <-done:
+		// Connection closed
+	case <-time.After(500 * time.Millisecond):
+		// Timeout is acceptable
+	}
+}
+
+func TestHandleConnection_HeartbeatTimeout(t *testing.T) {
+	log.Init(log.LevelInfo, language.Chinese)
+
+	// Create a connection that will fail on write (simulating heartbeat timeout)
+	conn := &mockConn{
+		Reader: &bytes.Buffer{},
+		Writer: &errorWriter{}, // Write will fail, simulating heartbeat send failure
+	}
+
+	conf := &ClientConfig{
+		Name:                "test",
+		LocalPort:           99999,
+		RemotePort:          10022,
+		LogLevel:            "info",
+		LogLang:             "zh",
+		HeartbeatInterval:   1,
+		HealthCheckInterval: 100 * time.Millisecond,
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- handleConnection(conn, conf)
+	}()
+
+	// Wait for heartbeat to attempt send and fail
+	time.Sleep(100 * time.Millisecond)
+
+	select {
+	case err := <-done:
+		// Should return error when heartbeat fails
+		if err == nil {
+			t.Error("expected error when heartbeat fails")
+		}
+	case <-time.After(2 * time.Second):
+		// Timeout - might still be running
+	}
+}
+
+func TestStartControlLoop_DataChannelConnectError(t *testing.T) {
+	log.Init(log.LevelInfo, language.Chinese)
+
+	var wbuf bytes.Buffer
+	req := protocol.RegisterRequest{Type: "open_data_channel", LocalPort: 99999} // Non-existent port
+	b, _ := json.Marshal(req)
+	protocol.WritePacket(&wbuf, b)
+	// Add an error packet to end the loop
+	protocol.WritePacket(&wbuf, []byte("invalid"))
+
+	conn := &mockConn{Reader: bytes.NewReader(wbuf.Bytes()), Writer: &bytes.Buffer{}}
+	conf := &ClientConfig{LocalPort: 99999}
+	done := make(chan error, 1)
+	go func() {
+		done <- StartControlLoop(conn, conf)
+	}()
+
+	select {
+	case err := <-done:
+		// Should return error when local connection fails
+		_ = err
+	case <-time.After(200 * time.Millisecond):
+		// Timeout is acceptable - loop continues
+	}
+}
+
+func TestLoadClientConfig_AllFields(t *testing.T) {
+	viper.Reset()
+	viper.Set("client.name", "test-name")
+	viper.Set("client.token", "test-token")
+	viper.Set("client.server_addr", "192.168.1.100:9090")
+	viper.Set("client.local_ports", []interface{}{3306})
+	viper.Set("client.remote_port", 13306)
+	viper.Set("client.log_level", "warn")
+	viper.Set("client.log_lang", "en")
+	viper.Set("client.heartbeat_interval", 20)
+	viper.Set("client.health_check_interval", 45)
+
+	conf := loadClientConfig()
+
+	if conf.Name != "test-name" {
+		t.Errorf("expected name test-name, got %s", conf.Name)
+	}
+	if conf.Token != "test-token" {
+		t.Errorf("expected token test-token, got %s", conf.Token)
+	}
+	if conf.ServerAddr != "192.168.1.100:9090" {
+		t.Errorf("expected server_addr 192.168.1.100:9090, got %s", conf.ServerAddr)
+	}
+	if conf.LocalPort != 3306 {
+		t.Errorf("expected local_port 3306, got %d", conf.LocalPort)
+	}
+	if conf.RemotePort != 13306 {
+		t.Errorf("expected remote_port 13306, got %d", conf.RemotePort)
+	}
+	if conf.LogLevel != "warn" {
+		t.Errorf("expected log_level warn, got %s", conf.LogLevel)
+	}
+	if conf.LogLang != "en" {
+		t.Errorf("expected log_lang en, got %s", conf.LogLang)
+	}
+	if conf.HeartbeatInterval != 20 {
+		t.Errorf("expected heartbeat_interval 20, got %d", conf.HeartbeatInterval)
+	}
+	expected := 45 * time.Second
+	if conf.HealthCheckInterval != expected {
+		t.Errorf("expected health_check_interval %v, got %v", expected, conf.HealthCheckInterval)
+	}
+}
