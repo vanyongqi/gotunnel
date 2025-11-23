@@ -168,9 +168,44 @@ client:
 ./gotunnel-client
 ```
 
-**说明：** 这样配置后，gotunnel-server 会在远程端口（默认 10022，但可以通过配置修改）上监听，并将流量转发到 Controller 的 6443 端口。Worker 节点可以通过 `your-controller-public-ip:10022` 访问 kube-apiserver。
+**说明：** 这样配置后，gotunnel-server 会在远程端口（默认 10022）上监听，并将流量转发到 Controller 的 6443 端口。
 
-**注意：** 当前版本 gotunnel-client 的 `remote_port` 是硬编码为 10022。如果需要使用 6443 端口，需要修改代码或使用反向代理。
+**重要限制：** 当前版本 gotunnel-client 的 `remote_port` 是硬编码为 10022。对于 K8s 场景，有两种解决方案：
+
+**方案 1：修改代码支持配置 remote_port（推荐）**
+
+修改 `cmd/client/main.go` 的 `loadClientConfig` 函数，添加 `remote_port` 配置支持：
+
+```go
+remotePort := 10022
+if viper.IsSet("client.remote_port") {
+    remotePort = viper.GetInt("client.remote_port")
+}
+```
+
+然后在配置文件中指定：
+```yaml
+client:
+  name: "k8s-controller-apiserver"
+  token: "your-very-secure-k8s-token-here"
+  server_addr: "your-controller-public-ip:17000"
+  local_ports: [6443]
+  remote_port: 6443  # 指定远程端口为 6443
+```
+
+**方案 2：使用反向代理（无需修改代码）**
+
+在 Controller 上使用 nginx 或 socat 将 6443 端口转发到 gotunnel-server 的 10022 端口：
+
+```bash
+# 使用 socat 转发
+socat TCP-LISTEN:6443,fork,reuseaddr TCP:localhost:10022
+
+# 或使用 nginx
+# 在 nginx 配置中添加 upstream 和 proxy_pass
+```
+
+这样 Worker 就可以通过 `your-controller-public-ip:6443` 访问 kube-apiserver。
 
 #### 3. 配置 K8s Worker 节点
 
