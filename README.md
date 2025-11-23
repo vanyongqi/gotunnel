@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/vanyongqi/gotunnel/branch/main/graph/badge.svg)](https://codecov.io/gh/vanyongqi/gotunnel)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vanyongqi/gotunnel)](https://goreportcard.com/report/github.com/vanyongqi/gotunnel)
 [![Go Version](https://img.shields.io/badge/go-1.21%2B-blue.svg)](https://golang.org)
-[![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub release](https://img.shields.io/github/release/vanyongqi/gotunnel.svg)](https://github.com/vanyongqi/gotunnel/releases)
 [![GitHub stars](https://img.shields.io/github/stars/vanyongqi/gotunnel.svg?style=social&label=Star)](https://github.com/vanyongqi/gotunnel)
 # gotunnel
@@ -59,4 +59,4 @@ Complete documentation is available in [doc/](./doc/) directory:
 
 ## License
 
-ISC License - see [LICENSE](LICENSE) file for details
+MIT License - see [LICENSE](LICENSE) file for details
