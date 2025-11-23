@@ -1,0 +1,24 @@
+# gotunnel 配置模板（请复制为 config.yaml 并补充您的实际信息）
+
+server:
+  addr: "0.0.0.0:17000"     # 监听地址，一般为 0.0.0.0:17000
+  log_level: "info"         # 日志等级: debug/info/warn/error
+  log_lang: "zh"            # 日志语言: zh/en
+  token: "<your-secret-token>"  # 服务端 token
+
+client:
+  name: "example-client"
+  token: "<your-secret-token>"         # 必须与 server.token 保持一致
+  server_addr: "<server_ip>:17000"     # 云服务器公网 IP
+  local_ports: [8080]                   # 本地待穿透的服务端口(数组)
+  remote_port: 10086                    # 云服务器对外映射端口
+  log_level: "info"
+  log_lang: "zh"
+  heartbeat_interval: 10                # 心跳间隔（秒）
+  health_check_interval: 30             # 健康检查间隔（秒）
+
+# 端口说明：
+# - 17000: 控制通道端口（一般不变）
+#   作用：客户端注册、心跳、状态同步等
+# - 10086: 数据通道端口（可配置）
+#   作用：业务流量转发，建议唯一

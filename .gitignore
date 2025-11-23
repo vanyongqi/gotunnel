@@ -39,8 +39,12 @@ bin/
 # Logs
 *.log
 
+# Local demo and test files
+local_demo/
+
 # Temporary files
 tmp/
 temp/
 *.tmp
+config.yaml
 

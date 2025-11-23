@@ -1,17 +1,34 @@
+# HTTP 验证场景 - 客户端配置
+# 在本地机器上使用
+
 server:
-  addr: "127.0.0.1:17000"     # 服务端监听本机端口（本地自测专用）
-  log_level: "info"          # 日志级别: debug/info/warn/error
-  log_lang: "zh"             # 日志语言: zh/en
-  token: "changeme"
+  addr: "0.0.0.0:17000"
+  log_level: "debug"
+  log_lang: "zh"
+  token: "local-demo-token"
 
 client:
-  name: "gotunnel-client-demo"  # 客户端自定义名称
-  token: "changeme"
-  server_addr: "127.0.0.1:17000" # 必须与 server 配置一致
-  local_ports: [2222]             # 本机sshd监听端口，如用默认22改成实际端口
-  remote_port: 10022              # 服务端对外暴露的远程端口，默认10022
-  log_level: "info"               # 日志级别: debug/info/warn/error
-  log_lang: "zh"                  # 日志语言: zh/en
-  heartbeat_interval: 10          # 心跳间隔（秒），默认10秒
-  health_check_interval: 30       # 健康检查间隔（秒），默认30秒
-  # 注意每次只支持一个端口映射（如需多端口自定义/扩展相关代码）
+  name: "local-http-client"
+  token: "local-demo-token"              # 必须与服务端 token 一致
+  server_addr: "115.190.166.146:17000"  # 云服务器 IP
+  local_ports: [22]                    # 本地 HTTP 服务端口
+  remote_port: 10022                    # 云服务器对外暴露的端口
+  log_level: "debug"
+  log_lang: "zh"
+  heartbeat_interval: 10                 # 心跳间隔（秒）
+  health_check_interval: 30              # 健康检查间隔（秒）
+
+# 端口说明：
+# - 17000: 控制通道端口（默认值，可通过 server.addr 修改）
+#   作用：客户端注册、心跳、状态同步等控制消息
+# - 18080: 数据通道端口（可通过 client.remote_port 自定义）
+#   作用：实际业务流量转发，可修改为任意可用端口
+
+# 使用说明：
+# 1. 确保本地 3000 端口有服务在运行
+# 2. 确保云服务器防火墙开放：
+#    - 17000（控制通道，客户端连接服务端）
+#    - 18080（数据通道，用户访问服务）
+# 3. 启动服务端：./gotunnel-server
+# 4. 启动客户端：./gotunnel-client
+# 5. 访问：http://115.190.166.146:18080
