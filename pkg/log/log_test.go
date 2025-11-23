@@ -136,7 +136,7 @@ func TestGetLanguage(t *testing.T) {
 
 func TestLogLevels(t *testing.T) {
 	Init(LevelDebug, language.Chinese)
-	
+
 	// Capture output
 	oldStdout := os.Stdout
 	oldStderr := os.Stderr
@@ -173,7 +173,7 @@ func TestLogLevels(t *testing.T) {
 
 func TestHelperFunctions(t *testing.T) {
 	Init(LevelInfo, language.Chinese)
-	
+
 	// Capture output
 	oldStdout := os.Stdout
 	oldStderr := os.Stderr

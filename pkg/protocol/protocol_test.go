@@ -139,7 +139,7 @@ func TestReadPacketIncompleteLength(t *testing.T) {
 func TestReadPacketIncompletePayload(t *testing.T) {
 	// Test incomplete payload
 	buf := bytes.NewBuffer([]byte{0x00, 0x00, 0x00, 0x05}) // Length = 5
-	buf.Write([]byte{0x01, 0x02})                         // Only 2 bytes instead of 5
+	buf.Write([]byte{0x01, 0x02})                          // Only 2 bytes instead of 5
 	_, err := ReadPacket(buf)
 	if err == nil {
 		t.Error("ReadPacket should return error on incomplete payload")

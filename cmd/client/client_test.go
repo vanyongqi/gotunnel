@@ -224,19 +224,19 @@ func TestLoadClientConfig_WithViper(t *testing.T) {
 func TestHandleConnection(t *testing.T) {
 	// Initialize logger for testing
 	log.Init(log.LevelInfo, language.Chinese)
-	
+
 	// Create a connection that will close immediately (simulating connection error)
 	var wbuf bytes.Buffer
 	// Send a pong message then close
 	pong := protocol.HeartbeatPong{Type: "pong", Time: time.Now().Unix()}
 	b, _ := json.Marshal(pong)
 	protocol.WritePacket(&wbuf, b)
-	
+
 	conn := &mockConn{
 		Reader: bytes.NewReader(wbuf.Bytes()),
 		Writer: &bytes.Buffer{},
 	}
-	
+
 	conf := &ClientConfig{
 		Name:       "test",
 		LocalPort:  99999, // Non-existent port for health probe
@@ -244,19 +244,19 @@ func TestHandleConnection(t *testing.T) {
 		LogLevel:   "info",
 		LogLang:    "zh",
 	}
-	
+
 	done := make(chan error, 1)
 	go func() {
 		// handleConnection will call StartControlLoop which will return when connection closes
 		done <- handleConnection(conn, conf)
 	}()
-	
+
 	// Wait a bit for health probe and heartbeat to start
 	time.Sleep(50 * time.Millisecond)
-	
+
 	// Close connection to trigger error
 	conn.Close()
-	
+
 	select {
 	case err := <-done:
 		// Expected error when connection closes
