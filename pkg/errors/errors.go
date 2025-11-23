@@ -10,7 +10,7 @@ const (
 	ErrConnectFailed = 1001
 	// ErrAuthFailed indicates an authentication failure.
 	ErrAuthFailed = 1002
-	// ...后续可扩展更多错误码
+	// ...more error codes can be extended in the future
 )
 
 // Error message keys for i18n
@@ -20,7 +20,7 @@ const (
 	ErrorKeyUnknown       = "error.unknown"
 )
 
-// PrintError 统一错误输出（使用 i18n）
+// PrintError provides unified error output (using i18n)
 func PrintError(code int, detail error) {
 	var key string
 	switch code {

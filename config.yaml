@@ -12,4 +12,6 @@ client:
   remote_port: 10022              # 服务端对外暴露的远程端口，默认10022
   log_level: "info"               # 日志级别: debug/info/warn/error
   log_lang: "zh"                  # 日志语言: zh/en
+  heartbeat_interval: 10          # 心跳间隔（秒），默认10秒
+  health_check_interval: 30       # 健康检查间隔（秒），默认30秒
   # 注意每次只支持一个端口映射（如需多端口自定义/扩展相关代码）

@@ -8,15 +8,15 @@ import (
 	"time"
 )
 
-// HeartbeatManager 管理心跳发送和监测。用于客户端和服务端控制通道健康。
+// HeartbeatManager manages heartbeat sending and monitoring. Used for client and server control channel health.
 type HeartbeatManager struct {
-	Conn      net.Conn      // 关联的网络连接
-	Interval  time.Duration // 心跳包发送间隔
-	OnTimeout func()        // 超时断开等回调
+	Conn      net.Conn      // Associated network connection
+	Interval  time.Duration // Heartbeat packet send interval
+	OnTimeout func()        // Timeout disconnect callback
 	stopChan  chan struct{}
 }
 
-// StartHeartbeat 启动定时发送ping包的goroutine。适用于客户端。
+// StartHeartbeat starts a goroutine that periodically sends ping packets. Suitable for clients.
 func (h *HeartbeatManager) StartHeartbeat() {
 	h.stopChan = make(chan struct{})
 	go func() {
@@ -42,7 +42,7 @@ func (h *HeartbeatManager) StartHeartbeat() {
 	}()
 }
 
-// StopHeartbeat 停止心跳。
+// StopHeartbeat stops the heartbeat.
 func (h *HeartbeatManager) StopHeartbeat() {
 	close(h.stopChan)
 }
@@ -56,8 +56,8 @@ func HeartbeatCheckLoop(checkFunc func()) {
 	}
 }
 
-// 示例用法
+// Example usage:
 // cMgr := &ha.HeartbeatManager{Conn: conn, Interval: 10 * time.Second, OnTimeout: func(){...}}
-// cMgr.StartHeartbeat() // 客户端心跳
-// cMgr.StopHeartbeat() // 停止心跳
-// ha.HeartbeatCheckLoop(自定义check函数) // 服务端心跳轮询
+// cMgr.StartHeartbeat() // Client heartbeat
+// cMgr.StopHeartbeat() // Stop heartbeat
+// ha.HeartbeatCheckLoop(customCheckFunc) // Server heartbeat polling

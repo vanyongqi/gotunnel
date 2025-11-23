@@ -7,71 +7,71 @@ import (
 	"io"
 )
 
-// HeartbeatPing 表示控制通道的心跳ping包，用于保持客户端-服务端连接活跃状态
-// 服务端收到应立即回复 HeartbeatPong
-// Type 固定值: "ping"
+// HeartbeatPing represents a heartbeat ping packet for the control channel to keep client-server connection alive.
+// Server should immediately reply with HeartbeatPong upon receiving.
+// Type is fixed: "ping"
 type HeartbeatPing struct {
 	Type string `json:"type"` // "ping"
-	Time int64  `json:"time"` // 可选，当前时间戳，可用于监控日志
+	Time int64  `json:"time"` // Optional, current timestamp, can be used for monitoring logs
 }
 
-// HeartbeatPong 表示心跳pong响应包
-// Type 固定值: "pong"
+// HeartbeatPong represents a heartbeat pong response packet.
+// Type is fixed: "pong"
 type HeartbeatPong struct {
 	Type string `json:"type"` // "pong"
-	Time int64  `json:"time"` // 可选
+	Time int64  `json:"time"` // Optional
 }
 
-// RegisterRequest 表示客户端注册端口的控制消息结构（用于注册需要被服务端代理的端口）
+// RegisterRequest represents a control message structure for client port registration (for registering ports that need to be proxied by server).
 type RegisterRequest struct {
-	Type       string `json:"type"`        // 固定为"register"
-	LocalPort  int    `json:"local_port"`  // 客户端本地需要映射的端口
-	RemotePort int    `json:"remote_port"` // 服务端为该映射开放的公网端口
-	Protocol   string `json:"protocol"`    // 协议 "tcp"/"http" 等
-	Token      string `json:"token"`       // 认证 token
-	Name       string `json:"name"`        // 客户端自定义名称
+	Type       string `json:"type"`        // Fixed as "register"
+	LocalPort  int    `json:"local_port"`  // Local port on client that needs to be mapped
+	RemotePort int    `json:"remote_port"` // Public port on server opened for this mapping
+	Protocol   string `json:"protocol"`    // Protocol "tcp"/"http" etc.
+	Token      string `json:"token"`       // Authentication token
+	Name       string `json:"name"`        // Client custom name
 }
 
-// RegisterResponse 表示服务端响应注册的控制消息，用于确认/拒绝
+// RegisterResponse represents a control message for server registration response, used for confirmation/rejection.
 type RegisterResponse struct {
-	Type   string `json:"type"`             // 固定为"register_resp"
+	Type   string `json:"type"`             // Fixed as "register_resp"
 	Status string `json:"status"`           // "ok" / "fail"
-	Reason string `json:"reason,omitempty"` // 失败时说明原因
+	Reason string `json:"reason,omitempty"` // Reason for failure
 }
 
-// OfflinePortRequest 通知 server 某端口（remote_port）应下线，停止公网监听和映射
+// OfflinePortRequest notifies server that a port (remote_port) should go offline, stop public listening and mapping.
 // Type: "offline_port"
 type OfflinePortRequest struct {
 	Type string `json:"type"` // "offline_port"
-	Port int    `json:"port"` // remote_port 被摘除
+	Port int    `json:"port"` // remote_port to be removed
 }
 
-// OnlinePortRequest 通知 server 某端口（remote_port）健康恢复，重新上线注册relay
+// OnlinePortRequest notifies server that a port (remote_port) has recovered health and should re-register relay.
 // Type: "online_port"
 type OnlinePortRequest struct {
 	Type string `json:"type"` // "online_port"
-	Port int    `json:"port"` // remote_port 被恢复
+	Port int    `json:"port"` // remote_port to be restored
 }
 
-// WritePacket 将一条完整的消息写入连接，格式为：4字节包体长度（大端） + 原始消息内容（payload）。
-// 参数说明：
+// WritePacket writes a complete message to the connection, format: 4-byte payload length (big-endian) + original message content (payload).
+// Parameters:
 //
-//	w: 目标 io.Writer，对应网络连接等
-//	payload: 需发送的消息内容（一般为json/protobuf编码结果）
+//	w: target io.Writer, typically a network connection
+//	payload: message content to send (usually json/protobuf encoded result)
 //
-// 返回值：
+// Returns:
 //
-//	返回写入过程中的错误（如有），写入成功返回nil
+//	error encountered during writing (if any), returns nil on success
 func WritePacket(w io.Writer, payload []byte) error {
-	// 最大消息长度限制，防止恶意大包攻击
+	// Maximum message length limit to prevent malicious large packet attacks
 	if len(payload) > 0x7fffffff {
 		log.Errorf("protocol", "error.payload_too_large", len(payload))
 		return errors.New("payload too large")
 	}
-	// 4字节大端存储包体长度
+	// Store payload length in 4 bytes big-endian
 	var lenBuf [4]byte
 	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(payload)))
-	// 先写包长，再写正文内容
+	// Write packet length first, then payload content
 	if _, err := w.Write(lenBuf[:]); err != nil {
 		return err
 	}
@@ -79,26 +79,26 @@ func WritePacket(w io.Writer, payload []byte) error {
 	return err
 }
 
-// ReadPacket 从连接读取一条完整消息，格式要求同上（4字节包体长度 + 实际内容）。
-// 参数说明：
+// ReadPacket reads a complete message from the connection, format requirement same as above (4-byte payload length + actual content).
+// Parameters:
 //
-//	r: 来源 io.Reader，一般是网络连接
+//	r: source io.Reader, typically a network connection
 //
-// 返回值：
+// Returns:
 //
-//	[]byte: 消息内容
-//	error: 读取或解包过程中遇到的错误
+//	[]byte: message content
+//	error: error encountered during reading or unpacking
 func ReadPacket(r io.Reader) ([]byte, error) {
-	// 先读4字节包长度
+	// Read 4-byte packet length first
 	var lenBuf [4]byte
 	if _, err := io.ReadFull(r, lenBuf[:]); err != nil {
 		return nil, err
 	}
 	length := binary.BigEndian.Uint32(lenBuf[:])
 	if length == 0 {
-		return nil, nil // 空包体情况
+		return nil, nil // Empty payload case
 	}
-	// 按长度读出实际消息内容
+	// Read actual message content according to length
 	buf := make([]byte, length)
 	if _, err := io.ReadFull(r, buf); err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func ReadPacket(r io.Reader) ([]byte, error) {
 	return buf, nil
 }
 
-// 本文件核心作用：
-//   - 明确每条消息边界，彻底解决tcp粘包、分包问题
-//   - 便于上层用json/protobuf自定义消息，实现安全、可扩展通信格式
-//   - 此方案兼容生产环境与本地开发调试，后续协议升级亦可直接复用本传输层逻辑
+// Core purpose of this file:
+//   - Clearly define message boundaries, completely solve TCP packet sticking and splitting issues
+//   - Facilitate upper layer custom messages with json/protobuf, implement secure and extensible communication format
+//   - This solution is compatible with production environment and local development debugging, future protocol upgrades can directly reuse this transport layer logic

@@ -5,8 +5,8 @@ import (
 	"net"
 )
 
-// RelayConn 实现 A、B 两端TCP连接的全双工（双向）字节流转发，直到任意一方关闭。
-// 调用后本函数会阻塞，直到任意一端关闭连接。适用于ssh/http等所有全透传业务。
+// RelayConn implements full-duplex (bidirectional) byte stream forwarding between two TCP connections A and B, until either side closes.
+// This function blocks after being called until either connection is closed. Suitable for all full passthrough services like ssh/http.
 func RelayConn(a, b net.Conn) {
 	// a->b
 	go func() {

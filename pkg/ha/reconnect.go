@@ -6,14 +6,14 @@ import (
 	"time"
 )
 
-// 单元测试可替换sleepHook控制耗时/效率
+// sleepHook can be replaced in unit tests to control duration/efficiency
 var sleepHook = time.Sleep
 
-// ReconnectLoop 按指数回退+随机jitter方式自动重连，
-// dialFunc 是尝试建立连接并返回是否成功的函数。
-// baseInterval, maxInterval：基础与最大回退间隔（秒）
-// maxTries：最大尝试次数，为0表示无限重试。
-// 成功建立连接则返回true，否则最终失败返回false。
+// ReconnectLoop automatically reconnects using exponential backoff + random jitter.
+// dialFunc is a function that attempts to establish a connection and returns whether it succeeded.
+// baseInterval, maxInterval: base and maximum backoff interval (seconds)
+// maxTries: maximum number of attempts, 0 means unlimited retries.
+// Returns true if connection is successfully established, false if it ultimately fails.
 func ReconnectLoop(dialFunc func() bool, baseInterval, maxInterval int, maxTries int) bool {
 	tries := 0
 	interval := baseInterval
@@ -37,4 +37,4 @@ func ReconnectLoop(dialFunc func() bool, baseInterval, maxInterval int, maxTries
 	}
 }
 
-// 示例用法见测试。
+// Example usage can be found in tests.

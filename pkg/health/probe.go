@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// ProbeTCPAlive 检查本地某端口存活性，timeout可配置
+// ProbeTCPAlive checks the liveness of a local port, timeout is configurable
 func ProbeTCPAlive(addr string, timeout time.Duration) bool {
 	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err == nil {
@@ -16,7 +16,7 @@ func ProbeTCPAlive(addr string, timeout time.Duration) bool {
 	return false
 }
 
-// PeriodicProbe 调用，定时探测本地端口，发现down后可通知主流程下线
+// PeriodicProbe periodically probes a local port, can notify main process to go offline when down is detected
 func PeriodicProbe(target string, interval time.Duration, onDead func(), onAlive func()) {
 	aliveLast := true
 	for {
@@ -38,5 +38,5 @@ func PeriodicProbe(target string, interval time.Duration, onDead func(), onAlive
 	}
 }
 
-// 示例用法：
+// Example usage:
 // health.PeriodicProbe("127.0.0.1:2222", 30*time.Second, func(){...}, func(){...})

@@ -18,15 +18,15 @@ import (
 type Mapping struct {
 	ClientConn    net.Conn
 	LocalPort     int
-	LastHeartbeat time.Time // 记录上次收到心跳的时间
+	LastHeartbeat time.Time // Last heartbeat time received
 }
 
 var mappingTable = make(map[int]*Mapping)
 var mappingTableMu sync.Mutex
 
-var heartbeatTimeout = 30 // 秒
+var heartbeatTimeout = 30 // seconds
 
-// ServerConfig 保存服务端运行参数
+// ServerConfig holds the server configuration parameters.
 type ServerConfig struct {
 	ListenAddr string
 	Token      string
@@ -77,7 +77,7 @@ func main() {
 	}
 	log.Infof("server", "server.control_channel_listening", conf.ListenAddr, conf.Token)
 
-	// 心跳检查协程由pkg/ha统一调度
+	// Heartbeat check goroutine is scheduled by pkg/ha
 	go ha.HeartbeatCheckLoop(checkClientHeartbeat)
 
 	for {
@@ -90,7 +90,7 @@ func main() {
 	}
 }
 
-// checkClientHeartbeat 按mappingTable定期检查，发现超时立即释放资源
+// checkClientHeartbeat periodically checks mappingTable and releases resources immediately on timeout
 func checkClientHeartbeat() {
 	mappingTableMu.Lock()
 	defer mappingTableMu.Unlock()
@@ -104,12 +104,12 @@ func checkClientHeartbeat() {
 	}
 }
 
-// 控制通道，注册、心跳包等
+// handleControlConn handles the control channel for registration, heartbeat, etc.
 func handleControlConn(conn net.Conn, serverToken string) {
 	defer func() { _ = conn.Close() }()
 	var regdRemotePort, regdLocalPort int
 	var listenDone chan struct{}
-	// 读取注册消息
+	// Read registration message
 	firstPacket, err := protocol.ReadPacket(conn)
 	if err != nil {
 		log.Errorf("server", "server.read_register_packet_failed", err)
@@ -118,7 +118,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	var reg protocol.RegisterRequest
 	_ = json.Unmarshal(firstPacket, &reg)
 	if reg.Token != serverToken {
-		resp := protocol.RegisterResponse{Type: "register_resp", Status: "fail", Reason: "鉴权失败"}
+		resp := protocol.RegisterResponse{Type: "register_resp", Status: "fail", Reason: "authentication failed"}
 		msg, _ := json.Marshal(resp)
 		if err := protocol.WritePacket(conn, msg); err != nil {
 			log.Errorf("server", "server.send_response_failed", err)
@@ -163,11 +163,11 @@ func handleControlConn(conn net.Conn, serverToken string) {
 			}
 			continue
 		}
-		// offline_port 处理
+		// Handle offline_port request
 		var off protocol.OfflinePortRequest
 		if err := json.Unmarshal(packet, &off); err == nil && off.Type == "offline_port" {
 			log.Infof("server", "server.client_offline_port", off.Port)
-			// 主动结束监听、relay
+			// Actively stop listening and relay
 			close(listenDone)
 			mappingTableMu.Lock()
 			delete(mappingTable, off.Port)
@@ -177,12 +177,12 @@ func handleControlConn(conn net.Conn, serverToken string) {
 		var on protocol.OnlinePortRequest
 		if err := json.Unmarshal(packet, &on); err == nil && on.Type == "online_port" {
 			log.Infof("server", "server.client_online_port", on.Port)
-			// 重新监听端口
+			// Re-listen on the port
 			listenDone = make(chan struct{})
 			go listenAndForwardWithStop(on.Port, conn, regdLocalPort, listenDone)
 			continue
 		}
-		// open_data_channel ... 其它协议不变
+		// Handle open_data_channel and other protocols
 		var ctrl protocol.RegisterRequest
 		if err := json.Unmarshal(packet, &ctrl); err == nil && ctrl.Type == "open_data_channel" {
 			continue
@@ -194,7 +194,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	log.Info("server", "server.control_channel_exit", nil)
 }
 
-// 新增支持stop信号的监听，供健康探针down时停止端口监听和relay
+// listenAndForwardWithStop listens with stop signal support, allowing health probe to stop port listening and relay when down
 func listenAndForwardWithStop(remotePort int, clientConn net.Conn, localPort int, stop <-chan struct{}) {
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", remotePort))
 	if err != nil {

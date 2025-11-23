@@ -14,20 +14,17 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	heartbeatInterval   = 10               // 秒,建议配置化
-	healthCheckInterval = 30 * time.Second // probe 间隔
-)
-
 // ClientConfig holds the client configuration parameters.
 type ClientConfig struct {
-	Name       string
-	Token      string
-	ServerAddr string
-	LocalPort  int
-	RemotePort int
-	LogLevel   string
-	LogLang    string
+	Name                string
+	Token               string
+	ServerAddr          string
+	LocalPort           int
+	RemotePort          int
+	LogLevel            string
+	LogLang             string
+	HeartbeatInterval   int           // Heartbeat interval in seconds
+	HealthCheckInterval time.Duration // Health check interval
 }
 
 func loadClientConfig() *ClientConfig {
@@ -58,7 +55,7 @@ func loadClientConfig() *ClientConfig {
 			}
 		}
 	}
-	remotePort := 10022 // 默认值
+	remotePort := 10022 // Default value
 	if viper.IsSet("client.remote_port") {
 		remotePort = viper.GetInt("client.remote_port")
 	}
@@ -70,14 +67,30 @@ func loadClientConfig() *ClientConfig {
 	if logLang == "" {
 		logLang = "zh"
 	}
+	heartbeatInterval := 10 // Default 10 seconds
+	if viper.IsSet("client.heartbeat_interval") {
+		heartbeatInterval = viper.GetInt("client.heartbeat_interval")
+		if heartbeatInterval <= 0 {
+			heartbeatInterval = 10 // Ensure greater than 0
+		}
+	}
+	healthCheckInterval := 30 * time.Second // Default 30 seconds
+	if viper.IsSet("client.health_check_interval") {
+		intervalSeconds := viper.GetInt("client.health_check_interval")
+		if intervalSeconds > 0 {
+			healthCheckInterval = time.Duration(intervalSeconds) * time.Second
+		}
+	}
 	return &ClientConfig{
-		Name:       name,
-		Token:      token,
-		ServerAddr: serverAddr,
-		LocalPort:  localPort,
-		RemotePort: remotePort,
-		LogLevel:   logLevel,
-		LogLang:    logLang,
+		Name:                name,
+		Token:               token,
+		ServerAddr:          serverAddr,
+		LocalPort:           localPort,
+		RemotePort:          remotePort,
+		LogLevel:            logLevel,
+		LogLang:             logLang,
+		HeartbeatInterval:   heartbeatInterval,
+		HealthCheckInterval: healthCheckInterval,
 	}
 }
 
@@ -154,7 +167,7 @@ func StartHealthProbe(conf *ClientConfig, _ net.Conn, onOffline func(), onOnline
 	doneHealth := make(chan struct{})
 	go func() {
 		target := fmt.Sprintf("127.0.0.1:%d", conf.LocalPort)
-		health.PeriodicProbe(target, healthCheckInterval, onOffline, onOnline)
+		health.PeriodicProbe(target, conf.HealthCheckInterval, onOffline, onOnline)
 		close(doneHealth)
 	}()
 	return func() { close(doneHealth) }
@@ -188,14 +201,14 @@ func StartControlLoop(conn net.Conn, _ *ClientConfig) error {
 
 // handleConnection handles a single connection lifecycle.
 func handleConnection(conn net.Conn, conf *ClientConfig) error {
-	// 启动心跳包 goroutine
-	heartbeatStop := StartHeartbeat(conn, time.Duration(heartbeatInterval)*time.Second, func() {
+	// Start heartbeat goroutine
+	heartbeatStop := StartHeartbeat(conn, time.Duration(conf.HeartbeatInterval)*time.Second, func() {
 		log.Warn("client", "client.heartbeat_timeout", nil)
 		_ = conn.Close()
 	})
 	defer heartbeatStop()
 
-	// 启动健康探针（使用闭包捕获状态变量）
+	// Start health probe (using closure to capture state variable)
 	var healthDown bool
 	stopHealth := StartHealthProbe(conf, conn,
 		func() {
