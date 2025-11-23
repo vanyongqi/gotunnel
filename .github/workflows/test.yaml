@@ -1,0 +1,22 @@
+name: Go Test CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.22.x
+    - name: Install dependencies
+      run: go mod download
+    - name: Run Tests
+      run: go test ./... -v
