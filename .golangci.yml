@@ -1,8 +1,12 @@
 linters-settings:
-  golint:
+  revive:
     min-confidence: 0
+    rules:
+      - name: unused-parameter
+        disabled: true
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   gocyclo:
     min-complexity: 15
   dupl:
@@ -20,7 +24,7 @@ linters:
     - staticcheck
     - unused
     - gofmt
-    - golint
+    - revive
     - typecheck
     - misspell
     - unconvert
@@ -34,6 +38,7 @@ issues:
         - goconst
         - unused
         - unparam
+        - revive
   max-issues-per-linter: 0
   max-same-issues: 0
 
