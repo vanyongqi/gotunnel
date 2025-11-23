@@ -13,11 +13,12 @@ Welcome to the gotunnel documentation center! This contains the complete documen
 - **[04-Protocol Documentation](./04-PROTOCOL.md)** - Communication protocol details
 - **[05-Development Guide](./05-DEVELOPMENT.md)** - Developer documentation
 - **[06-Troubleshooting Guide](./06-TROUBLESHOOTING.md)** - Common issues and solutions
+- **[07-Design Notes](./07-DESIGN-NOTES.md)** - Design considerations and best practices
 
 ## Quick Navigation
 
 - **New User:** Start with [Quick Start Guide](./01-QUICKSTART.md)
-- **Developer:** Read the [Development Guide](./05-DEVELOPMENT.md) and [Protocol Documentation](./04-PROTOCOL.md)
+- **Developer:** Read the [Development Guide](./05-DEVELOPMENT.md), [Protocol Documentation](./04-PROTOCOL.md), and [Design Notes](./07-DESIGN-NOTES.md)
 - **Deployment:** Review [Architecture Design](./03-ARCHITECTURE.md) and configuration docs
 
 ---

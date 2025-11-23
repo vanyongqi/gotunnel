@@ -35,6 +35,7 @@ Complete documentation is available in [doc/](./doc/) directory:
 - **[Protocol Documentation](./doc/en/04-PROTOCOL.md)** - Communication protocol details
 - **[Development Guide](./doc/en/05-DEVELOPMENT.md)** - Developer documentation
 - **[Troubleshooting Guide](./doc/en/06-TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Design Notes](./doc/en/07-DESIGN-NOTES.md)** - Design considerations and best practices
 
 ## Core Features
 
