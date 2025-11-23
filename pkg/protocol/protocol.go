@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 	"errors"
+	"gotunnel/pkg/log"
 	"io"
 )
 
@@ -64,6 +65,7 @@ type OnlinePortRequest struct {
 func WritePacket(w io.Writer, payload []byte) error {
 	// 最大消息长度限制，防止恶意大包攻击
 	if len(payload) > 0x7fffffff {
+		log.Errorf("protocol", "error.payload_too_large", len(payload))
 		return errors.New("payload too large")
 	}
 	// 4字节大端存储包体长度

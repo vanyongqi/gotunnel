@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gotunnel/pkg/core"
 	"gotunnel/pkg/ha"
+	"gotunnel/pkg/log"
 	"gotunnel/pkg/protocol"
 	"net"
 	"sync"
@@ -29,6 +30,8 @@ var heartbeatTimeout = 30 // 秒
 type ServerConfig struct {
 	ListenAddr string
 	Token      string
+	LogLevel   string
+	LogLang    string
 }
 
 func loadServerConfig() *ServerConfig {
@@ -45,20 +48,34 @@ func loadServerConfig() *ServerConfig {
 	if token == "" {
 		token = "changeme"
 	}
+	logLevel := viper.GetString("server.log_level")
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	logLang := viper.GetString("server.log_lang")
+	if logLang == "" {
+		logLang = "zh"
+	}
 
 	return &ServerConfig{
 		ListenAddr: addr,
 		Token:      token,
+		LogLevel:   logLevel,
+		LogLang:    logLang,
 	}
 }
 
 func main() {
 	conf := loadServerConfig()
+
+	// Initialize logger
+	log.Init(log.ParseLevel(conf.LogLevel), log.ParseLanguage(conf.LogLang))
+
 	ln, err := net.Listen("tcp", conf.ListenAddr)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("[gotunnel][server] 控制通道监听: %s (token: %s)\n", conf.ListenAddr, conf.Token)
+	log.Infof("server", "server.control_channel_listening", conf.ListenAddr, conf.Token)
 
 	// 心跳检查协程由pkg/ha统一调度
 	go ha.HeartbeatCheckLoop(checkClientHeartbeat)
@@ -66,7 +83,7 @@ func main() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Println("accept error:", err)
+			log.Errorf("server", "server.accept_error", err)
 			continue
 		}
 		go handleControlConn(conn, conf.Token)
@@ -80,7 +97,7 @@ func checkClientHeartbeat() {
 	now := time.Now()
 	for port, m := range mappingTable {
 		if now.Sub(m.LastHeartbeat) > time.Duration(heartbeatTimeout)*time.Second {
-			fmt.Printf("[gotunnel][server] 客户端端口 %d 心跳超时，主动关掉映射\n", port)
+			log.Warnf("server", "server.client_heartbeat_timeout", port)
 			_ = m.ClientConn.Close()
 			delete(mappingTable, port)
 		}
@@ -95,7 +112,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	// 读取注册消息
 	firstPacket, err := protocol.ReadPacket(conn)
 	if err != nil {
-		fmt.Println("[server] 读取注册包失败:", err)
+		log.Errorf("server", "server.read_register_packet_failed", err)
 		return
 	}
 	var reg protocol.RegisterRequest
@@ -104,20 +121,20 @@ func handleControlConn(conn net.Conn, serverToken string) {
 		resp := protocol.RegisterResponse{Type: "register_resp", Status: "fail", Reason: "鉴权失败"}
 		msg, _ := json.Marshal(resp)
 		if err := protocol.WritePacket(conn, msg); err != nil {
-			fmt.Printf("[server] 发送拒绝响应失败: %v\n", err)
+			log.Errorf("server", "server.send_response_failed", err)
 		}
-		fmt.Println("[server] token校验失败，已拒绝", reg.Name)
+		log.Warnf("server", "server.token_auth_failed", reg.Name)
 		return
 	}
 	mappingTableMu.Lock()
 	mappingTable[reg.RemotePort] = &Mapping{ClientConn: conn, LocalPort: reg.LocalPort, LastHeartbeat: time.Now()}
 	mappingTableMu.Unlock()
 	regdRemotePort, regdLocalPort = reg.RemotePort, reg.LocalPort
-	fmt.Printf("[gotunnel][server] 注册成功，公网端口 %d => 内网 %d\n", regdRemotePort, regdLocalPort)
+	log.Infof("server", "server.port_mapping_registered", regdRemotePort, regdLocalPort)
 	resp := protocol.RegisterResponse{Type: "register_resp", Status: "ok"}
 	msg, _ := json.Marshal(resp)
 	if err := protocol.WritePacket(conn, msg); err != nil {
-		fmt.Printf("[server] 发送注册响应失败: %v\n", err)
+		log.Errorf("server", "server.send_response_failed", err)
 		return
 	}
 
@@ -127,7 +144,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	for {
 		packet, err := protocol.ReadPacket(conn)
 		if err != nil {
-			fmt.Printf("[server] 控制通道断开: %v\n", err)
+			log.Warnf("server", "server.control_channel_disconnected", err)
 			break
 		}
 
@@ -141,7 +158,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 			pong := protocol.HeartbeatPong{Type: "pong", Time: time.Now().Unix()}
 			b, _ := json.Marshal(pong)
 			if err := protocol.WritePacket(conn, b); err != nil {
-				fmt.Printf("[server] 发送心跳响应失败: %v\n", err)
+				log.Errorf("server", "server.send_heartbeat_failed", err)
 				break
 			}
 			continue
@@ -149,7 +166,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 		// offline_port 处理
 		var off protocol.OfflinePortRequest
 		if err := json.Unmarshal(packet, &off); err == nil && off.Type == "offline_port" {
-			fmt.Printf("[gotunnel][server] client请求下线端口 %d\n", off.Port)
+			log.Infof("server", "server.client_offline_port", off.Port)
 			// 主动结束监听、relay
 			close(listenDone)
 			mappingTableMu.Lock()
@@ -159,7 +176,7 @@ func handleControlConn(conn net.Conn, serverToken string) {
 		}
 		var on protocol.OnlinePortRequest
 		if err := json.Unmarshal(packet, &on); err == nil && on.Type == "online_port" {
-			fmt.Printf("[gotunnel][server] client恢复端口 %d，重新注册port监听\n", on.Port)
+			log.Infof("server", "server.client_online_port", on.Port)
 			// 重新监听端口
 			listenDone = make(chan struct{})
 			go listenAndForwardWithStop(on.Port, conn, regdLocalPort, listenDone)
@@ -174,17 +191,17 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	mappingTableMu.Lock()
 	delete(mappingTable, regdRemotePort)
 	mappingTableMu.Unlock()
-	fmt.Println("[server] 控制通道退出，清理端口映射")
+	log.Info("server", "server.control_channel_exit", nil)
 }
 
 // 新增支持stop信号的监听，供健康探针down时停止端口监听和relay
 func listenAndForwardWithStop(remotePort int, clientConn net.Conn, localPort int, stop <-chan struct{}) {
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", remotePort))
 	if err != nil {
-		fmt.Printf("[server] 监听端口失败: %v\n", err)
+		log.Errorf("server", "server.listen_port_failed", err)
 		return
 	}
-	fmt.Printf("[gotunnel][server] 公网端口监听开启: %d\n", remotePort)
+	log.Infof("server", "server.port_listening", remotePort)
 	acceptCh := make(chan net.Conn)
 	go func() {
 		for {
@@ -199,14 +216,14 @@ func listenAndForwardWithStop(remotePort int, clientConn net.Conn, localPort int
 		select {
 		case <-stop:
 			_ = ln.Close()
-			fmt.Printf("[server] 停止公网端口监听:%d(健康探针下线)\n", remotePort)
+			log.Infof("server", "server.port_stopped", remotePort)
 			return
 		case userConn := <-acceptCh:
 			go func() {
 				req := protocol.RegisterRequest{Type: "open_data_channel", LocalPort: localPort}
 				reqBytes, _ := json.Marshal(req)
 				if err := protocol.WritePacket(clientConn, reqBytes); err != nil {
-					fmt.Printf("[server] 发送数据通道指令失败: %v\n", err)
+					log.Errorf("server", "server.send_data_channel_cmd_failed", err)
 					_ = userConn.Close()
 					return
 				}

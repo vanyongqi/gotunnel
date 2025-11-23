@@ -6,6 +6,7 @@ import (
 	"gotunnel/pkg/core"
 	"gotunnel/pkg/errors"
 	"gotunnel/pkg/health"
+	"gotunnel/pkg/log"
 	"gotunnel/pkg/protocol"
 	"net"
 	"time"
@@ -25,6 +26,8 @@ type ClientConfig struct {
 	ServerAddr string
 	LocalPort  int
 	RemotePort int
+	LogLevel   string
+	LogLang    string
 }
 
 func loadClientConfig() *ClientConfig {
@@ -59,12 +62,22 @@ func loadClientConfig() *ClientConfig {
 	if viper.IsSet("client.remote_port") {
 		remotePort = viper.GetInt("client.remote_port")
 	}
+	logLevel := viper.GetString("client.log_level")
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	logLang := viper.GetString("client.log_lang")
+	if logLang == "" {
+		logLang = "zh"
+	}
 	return &ClientConfig{
 		Name:       name,
 		Token:      token,
 		ServerAddr: serverAddr,
 		LocalPort:  localPort,
 		RemotePort: remotePort,
+		LogLevel:   logLevel,
+		LogLang:    logLang,
 	}
 }
 
@@ -94,6 +107,8 @@ func RegisterPort(conn net.Conn, conf *ClientConfig) error {
 	var resp protocol.RegisterResponse
 	_ = json.Unmarshal(respBytes, &resp)
 	if resp.Status != "ok" {
+		// Log error with i18n, but still return error for caller to handle
+		log.Errorf("client", "error.register_failed", resp.Reason)
 		return fmt.Errorf("register failed: %s", resp.Reason)
 	}
 	return nil
@@ -159,13 +174,13 @@ func StartControlLoop(conn net.Conn, _ *ClientConfig) error {
 		var ctrl protocol.RegisterRequest
 		_ = json.Unmarshal(packet, &ctrl)
 		if ctrl.Type == "open_data_channel" {
-			fmt.Printf("[gotunnel][client] 收到数据通道指令，准备转发本地 %d\n", ctrl.LocalPort)
+			log.Infof("client", "client.data_channel_received", ctrl.LocalPort)
 			localConn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", ctrl.LocalPort))
 			if err != nil {
-				fmt.Println("[ERROR] 连接本地端口失败:", err)
+				log.Errorf("client", "client.connect_local_failed", err)
 				continue
 			}
-			fmt.Println("[gotunnel][client] relay 开始 ...")
+			log.Debug("client", "client.relay_started", nil)
 			core.RelayConn(conn, localConn)
 		}
 	}
@@ -175,7 +190,7 @@ func StartControlLoop(conn net.Conn, _ *ClientConfig) error {
 func handleConnection(conn net.Conn, conf *ClientConfig) error {
 	// 启动心跳包 goroutine
 	heartbeatStop := StartHeartbeat(conn, time.Duration(heartbeatInterval)*time.Second, func() {
-		fmt.Println("[gotunnel][client] 心跳超时，触发重连...")
+		log.Warn("client", "client.heartbeat_timeout", nil)
 		_ = conn.Close()
 	})
 	defer heartbeatStop()
@@ -185,22 +200,22 @@ func handleConnection(conn net.Conn, conf *ClientConfig) error {
 	stopHealth := StartHealthProbe(conf, conn,
 		func() {
 			if !healthDown {
-				fmt.Printf("[gotunnel][client] 本地端口%d健康丢失，发起offline_port\n", conf.LocalPort)
+				log.Warnf("client", "client.local_port_health_lost", conf.LocalPort)
 				req := protocol.OfflinePortRequest{Type: "offline_port", Port: conf.RemotePort}
 				b, _ := json.Marshal(req)
 				if err := protocol.WritePacket(conn, b); err != nil {
-					fmt.Printf("[gotunnel][client] 发送offline_port失败: %v\n", err)
+					log.Errorf("client", "client.send_offline_port_failed", err)
 				}
 				healthDown = true
 			}
 		},
 		func() {
 			if healthDown {
-				fmt.Printf("[gotunnel][client] 本地端口%d恢复，发起online_port\n", conf.LocalPort)
+				log.Infof("client", "client.local_port_recovered", conf.LocalPort)
 				req := protocol.OnlinePortRequest{Type: "online_port", Port: conf.RemotePort}
 				b, _ := json.Marshal(req)
 				if err := protocol.WritePacket(conn, b); err != nil {
-					fmt.Printf("[gotunnel][client] 发送online_port失败: %v\n", err)
+					log.Errorf("client", "client.send_online_port_failed", err)
 				}
 				healthDown = false
 			}
@@ -213,7 +228,11 @@ func handleConnection(conn net.Conn, conf *ClientConfig) error {
 
 func main() {
 	conf := loadClientConfig()
-	fmt.Printf("[gotunnel][client] 注册端口: 本地 %d => 公网 %d\n", conf.LocalPort, conf.RemotePort)
+
+	// Initialize logger
+	log.Init(log.ParseLevel(conf.LogLevel), log.ParseLanguage(conf.LogLang))
+
+	log.Infof("client", "client.port_registered", conf.LocalPort, conf.RemotePort)
 	for {
 		conn, err := DialServer(conf)
 		if err != nil {
@@ -223,14 +242,14 @@ func main() {
 		}
 		if err := RegisterPort(conn, conf); err != nil {
 			_ = conn.Close()
-			fmt.Println("[gotunnel][client] 端口注册失败:", err)
+			log.Errorf("client", "client.port_register_failed", err)
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		fmt.Println("[gotunnel][client] 端口注册成功，启动心跳和健康探针...")
+		log.Info("client", "client.port_register_success", nil)
 
 		if err := handleConnection(conn, conf); err != nil {
-			fmt.Println("[gotunnel][client] 控制通道断开，自动重连:", err)
+			log.Warnf("client", "client.control_channel_disconnected", err)
 			_ = conn.Close()
 			time.Sleep(3 * time.Second)
 			continue

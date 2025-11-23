@@ -2,7 +2,7 @@ package ha
 
 import (
 	"encoding/json"
-	"fmt"
+	"gotunnel/pkg/log"
 	"gotunnel/pkg/protocol"
 	"net"
 	"time"
@@ -29,7 +29,7 @@ func (h *HeartbeatManager) StartHeartbeat() {
 				b, _ := json.Marshal(ping)
 				err := protocol.WritePacket(h.Conn, b)
 				if err != nil {
-					fmt.Println("[ha] 心跳包发送失败", err)
+					log.Errorf("ha", "ha.heartbeat_send_failed", err)
 					if h.OnTimeout != nil {
 						h.OnTimeout()
 					}

@@ -1,7 +1,7 @@
 package ha
 
 import (
-	"fmt"
+	"gotunnel/pkg/log"
 	"math/rand"
 	"time"
 )
@@ -19,7 +19,7 @@ func ReconnectLoop(dialFunc func() bool, baseInterval, maxInterval int, maxTries
 	interval := baseInterval
 	for {
 		if maxTries > 0 && tries >= maxTries {
-			fmt.Printf("[ha] 超过最大重连次数%d，重连失败\n", maxTries)
+			log.Errorf("ha", "ha.reconnect_max_tries", maxTries)
 			return false
 		}
 		if dialFunc() {
@@ -27,7 +27,7 @@ func ReconnectLoop(dialFunc func() bool, baseInterval, maxInterval int, maxTries
 		}
 		d := time.Duration(interval) * time.Second
 		jitter := time.Duration(rand.Intn(1000)) * time.Millisecond
-		fmt.Printf("[ha] 自动重连%d失败，%v秒后重试...\n", tries+1, d+jitter)
+		log.Warnf("ha", "ha.reconnect_retry", tries+1, d+jitter)
 		sleepHook(d + jitter)
 		interval = interval * 2
 		if interval > maxInterval {

@@ -1,5 +1,9 @@
 package errors
 
+import (
+	"gotunnel/pkg/log"
+)
+
 // Error codes for gotunnel.
 const (
 	// ErrConnectFailed indicates a connection failure to the server.
@@ -9,20 +13,32 @@ const (
 	// ...后续可扩展更多错误码
 )
 
-var errorMessages = map[int]string{
-	ErrConnectFailed: "无法连接服务端",
-	ErrAuthFailed:    "认证失败，请检查token",
-}
+// Error message keys for i18n
+const (
+	ErrorKeyConnectFailed = "error.connect_failed"
+	ErrorKeyAuthFailed    = "error.auth_failed"
+	ErrorKeyUnknown       = "error.unknown"
+)
 
-// PrintError 统一错误输出
+// PrintError 统一错误输出（使用 i18n）
 func PrintError(code int, detail error) {
-	msg, ok := errorMessages[code]
-	if !ok {
-		msg = "未知错误"
+	var key string
+	switch code {
+	case ErrConnectFailed:
+		key = ErrorKeyConnectFailed
+	case ErrAuthFailed:
+		key = ErrorKeyAuthFailed
+	default:
+		key = ErrorKeyUnknown
+	}
+
+	data := map[string]interface{}{
+		"Code": code,
 	}
 	if detail != nil {
-		println("[ERROR][", code, "]", msg, ":", detail.Error())
+		data["Error"] = detail.Error()
+		log.Error("error", key, data)
 	} else {
-		println("[ERROR][", code, "]", msg)
+		log.Error("error", key, data)
 	}
 }

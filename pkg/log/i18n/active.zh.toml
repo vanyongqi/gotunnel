@@ -1,0 +1,116 @@
+# Chinese translations
+
+[server.control_channel_listening]
+other = "控制通道监听: {{.Addr}} (token: {{.Token}})"
+
+[server.port_mapping_registered]
+other = "注册成功，公网端口 {{.RemotePort}} => 内网 {{.LocalPort}}"
+
+[server.port_listening]
+other = "公网端口监听开启: {{.Port}}"
+
+[server.port_stopped]
+other = "停止公网端口监听:{{.Port}}(健康探针下线)"
+
+[server.client_heartbeat_timeout]
+other = "客户端端口 {{.Port}} 心跳超时，主动关掉映射"
+
+[server.token_auth_failed]
+other = "token校验失败，已拒绝 {{.Name}}"
+
+[server.control_channel_disconnected]
+other = "控制通道断开: {{.Error}}"
+
+[server.control_channel_exit]
+other = "控制通道退出，清理端口映射"
+
+[server.read_register_packet_failed]
+other = "读取注册包失败: {{.Error}}"
+
+[server.send_response_failed]
+other = "发送响应失败: {{.Error}}"
+
+[server.listen_port_failed]
+other = "监听端口失败: {{.Error}}"
+
+[server.send_data_channel_cmd_failed]
+other = "发送数据通道指令失败: {{.Error}}"
+
+[server.client_offline_port]
+other = "client请求下线端口 {{.Port}}"
+
+[server.client_online_port]
+other = "client恢复端口 {{.Port}}，重新注册port监听"
+
+[server.accept_error]
+other = "accept error: {{.Error}}"
+
+[server.send_heartbeat_failed]
+other = "发送心跳响应失败: {{.Error}}"
+
+[client.port_registered]
+other = "注册端口: 本地 {{.LocalPort}} => 公网 {{.RemotePort}}"
+
+[client.port_register_failed]
+other = "端口注册失败: {{.Error}}"
+
+[client.port_register_success]
+other = "端口注册成功，启动心跳和健康探针..."
+
+[client.heartbeat_timeout]
+other = "心跳超时，触发重连..."
+
+[client.control_channel_disconnected]
+other = "控制通道断开，自动重连: {{.Error}}"
+
+[client.local_port_health_lost]
+other = "本地端口{{.Port}}健康丢失，发起offline_port"
+
+[client.local_port_recovered]
+other = "本地端口{{.Port}}恢复，发起online_port"
+
+[client.send_offline_port_failed]
+other = "发送offline_port失败: {{.Error}}"
+
+[client.send_online_port_failed]
+other = "发送online_port失败: {{.Error}}"
+
+[client.data_channel_received]
+other = "收到数据通道指令，准备转发本地 {{.Port}}"
+
+[client.connect_local_failed]
+other = "[ERROR] 连接本地端口失败: {{.Error}}"
+
+[client.relay_started]
+other = "relay 开始 ..."
+
+[ha.heartbeat_send_failed]
+other = "心跳包发送失败 {{.Error}}"
+
+[ha.reconnect_max_tries]
+other = "超过最大重连次数{{.MaxTries}}，重连失败"
+
+[ha.reconnect_retry]
+other = "自动重连{{.Tries}}失败，{{.Duration}}秒后重试..."
+
+[health.port_healthy]
+other = "端口 {{.Target}} 健康"
+
+[health.port_unreachable]
+other = "端口 {{.Target}} 不可达"
+
+[error.connect_failed]
+other = "[ERROR][{{.Code}}] 无法连接服务端: {{.Error}}"
+
+[error.auth_failed]
+other = "[ERROR][{{.Code}}] 认证失败，请检查token: {{.Error}}"
+
+[error.unknown]
+other = "[ERROR][{{.Code}}] 未知错误"
+
+[error.register_failed]
+other = "端口注册失败: {{.Arg1}}"
+
+[error.payload_too_large]
+other = "消息体过大: {{.Size}} 字节，超过最大限制"
+

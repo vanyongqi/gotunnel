@@ -1,7 +1,7 @@
 package health
 
 import (
-	"fmt"
+	"gotunnel/pkg/log"
 	"net"
 	"time"
 )
@@ -26,13 +26,13 @@ func PeriodicProbe(target string, interval time.Duration, onDead func(), onAlive
 				onAlive()
 			}
 			aliveLast = true
-			fmt.Printf("[health] 端口 %s 健康\n", target)
+			log.Debugf("health", "health.port_healthy", target)
 		} else {
 			if aliveLast && onDead != nil {
 				onDead()
 			}
 			aliveLast = false
-			fmt.Printf("[health] 端口 %s 不可达\n", target)
+			log.Warnf("health", "health.port_unreachable", target)
 		}
 		time.Sleep(interval)
 	}

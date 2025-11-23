@@ -1,0 +1,116 @@
+# English translations
+
+[server.control_channel_listening]
+other = "Control channel listening: {{.Addr}} (token: {{.Token}})"
+
+[server.port_mapping_registered]
+other = "Port mapping registered, remote port {{.RemotePort}} => local {{.LocalPort}}"
+
+[server.port_listening]
+other = "Remote port listening started: {{.Port}}"
+
+[server.port_stopped]
+other = "Stopped remote port listening:{{.Port}}(health probe down)"
+
+[server.client_heartbeat_timeout]
+other = "Client port {{.Port}} heartbeat timeout, closing mapping"
+
+[server.token_auth_failed]
+other = "Token authentication failed, rejected {{.Name}}"
+
+[server.control_channel_disconnected]
+other = "Control channel disconnected: {{.Error}}"
+
+[server.control_channel_exit]
+other = "Control channel exited, cleaning up port mapping"
+
+[server.read_register_packet_failed]
+other = "Failed to read register packet: {{.Error}}"
+
+[server.send_response_failed]
+other = "Failed to send response: {{.Error}}"
+
+[server.listen_port_failed]
+other = "Failed to listen on port: {{.Error}}"
+
+[server.send_data_channel_cmd_failed]
+other = "Failed to send data channel command: {{.Error}}"
+
+[server.client_offline_port]
+other = "Client requested offline port {{.Port}}"
+
+[server.client_online_port]
+other = "Client recovered port {{.Port}}, re-registering port listener"
+
+[server.accept_error]
+other = "Accept error: {{.Error}}"
+
+[server.send_heartbeat_failed]
+other = "Failed to send heartbeat response: {{.Error}}"
+
+[client.port_registered]
+other = "Port registered: local {{.LocalPort}} => remote {{.RemotePort}}"
+
+[client.port_register_failed]
+other = "Port registration failed: {{.Error}}"
+
+[client.port_register_success]
+other = "Port registration successful, starting heartbeat and health probe..."
+
+[client.heartbeat_timeout]
+other = "Heartbeat timeout, triggering reconnection..."
+
+[client.control_channel_disconnected]
+other = "Control channel disconnected, auto reconnecting: {{.Error}}"
+
+[client.local_port_health_lost]
+other = "Local port {{.Port}} health lost, sending offline_port"
+
+[client.local_port_recovered]
+other = "Local port {{.Port}} recovered, sending online_port"
+
+[client.send_offline_port_failed]
+other = "Failed to send offline_port: {{.Error}}"
+
+[client.send_online_port_failed]
+other = "Failed to send online_port: {{.Error}}"
+
+[client.data_channel_received]
+other = "Data channel command received, preparing to forward to local {{.Port}}"
+
+[client.connect_local_failed]
+other = "[ERROR] Failed to connect to local port: {{.Error}}"
+
+[client.relay_started]
+other = "Relay started ..."
+
+[ha.heartbeat_send_failed]
+other = "Heartbeat packet send failed {{.Error}}"
+
+[ha.reconnect_max_tries]
+other = "Exceeded max reconnect attempts {{.MaxTries}}, reconnection failed"
+
+[ha.reconnect_retry]
+other = "Auto reconnect {{.Tries}} failed, retrying in {{.Duration}} seconds..."
+
+[health.port_healthy]
+other = "Port {{.Target}} is healthy"
+
+[health.port_unreachable]
+other = "Port {{.Target}} is unreachable"
+
+[error.connect_failed]
+other = "[ERROR][{{.Code}}] Failed to connect to server: {{.Error}}"
+
+[error.auth_failed]
+other = "[ERROR][{{.Code}}] Authentication failed, please check token: {{.Error}}"
+
+[error.unknown]
+other = "[ERROR][{{.Code}}] Unknown error"
+
+[error.register_failed]
+other = "Port registration failed: {{.Arg1}}"
+
+[error.payload_too_large]
+other = "Payload too large: {{.Size}} bytes, exceeds maximum limit"
+

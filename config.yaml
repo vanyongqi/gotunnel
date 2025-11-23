@@ -1,6 +1,7 @@
 server:
   addr: "127.0.0.1:17000"     # 服务端监听本机端口（本地自测专用）
-  log_level: "debug"
+  log_level: "info"          # 日志级别: debug/info/warn/error
+  log_lang: "zh"             # 日志语言: zh/en
   token: "changeme"
 
 client:
@@ -9,4 +10,6 @@ client:
   server_addr: "127.0.0.1:17000" # 必须与 server 配置一致
   local_ports: [2222]             # 本机sshd监听端口，如用默认22改成实际端口
   remote_port: 10022              # 服务端对外暴露的远程端口，默认10022
+  log_level: "info"               # 日志级别: debug/info/warn/error
+  log_lang: "zh"                  # 日志语言: zh/en
   # 注意每次只支持一个端口映射（如需多端口自定义/扩展相关代码）
