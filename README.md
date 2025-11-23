@@ -1,72 +1,55 @@
 # gotunnel
 
-gotunnel 是一个用 Go 语言实现的高性能内网穿透（Tunnel/Proxy）工具，灵感源自 frp、ngrok，适合通过云服务器安全高效地远程访问和管理任意数量的内网服务节点。
+gotunnel is a high-performance intranet penetration (Tunnel/Proxy) tool implemented in Go, inspired by frp and ngrok. It enables secure and efficient remote access and management of any number of internal network service nodes through cloud servers.
 
----
+## Quick Start
 
-## 一、项目目标
-- **安全**、**高效**地将多个内网服务节点（如 SSH、Web、数据库等，无节点数量限制）“暴露”到公网，仅需部署 gotunnel，无需公网 IP。
-- 支持多客户端批量动态注册与扩展，适配 K8s、物理/虚拟机集群等大规模自动化场景。
-- 提供统一入口，方便运维、SRE、开发等用户在云服务器上集中访问和统一配置内网服务。
+```bash
+# Build
+go build -o gotunnel-server ./cmd/server
+go build -o gotunnel-client ./cmd/client
 
-## 二、系统架构
+# Start server
+./gotunnel-server
 
-### 1. 角色划分
-- **Client（客户端）**：部署在各内网主机（可为单机、集群、容器、K8s Pod），负责注册本地服务端口，并与 Server 建立持久（加密）连接。
-- **Server（服务端）**：部署于云服务器（有公网 IP），用于接收 User 请求、转发至指定 Client，维护所有会话与服务节点目录。
-- **User（请求方）**：指最终访问穿透服务的“外部用户/程序”，无需运行任何 gotunnel 组件，只需访问 Server 对外端口。
-
-### 2. 工作流程
-1. 大量 Client 可动态自动启动，与 Server 建立控制通道（TLS），完成身份认证和端口映射注册。
-2. Server 实时维护所有已注册客户端的映射目录，管理并发连接及状态。
-3. User 外部访问 Server 的映射端口，Server 匹配对应的 Client，通过控制通道动态协商数据通道。
-4. 控制通道负责全局状态同步、心跳、故障恢复，大规模场景下依然安全高可用。
-
-### 3. 用例举例
-- 你在家通过云服务器安全访问公司数十台（或 K8s 自动扩缩容生成的）内网 Linux、容器服务。
-- 团队多成员通过统一入口集中访问、监控所有内网主机及其公开服务。
-
----
-
-## 三、协议与实现建议
-
-### 1. 控制通道协议（Control Channel）
-- JSON 或 protobuf 消息结构，支持批量注册多个服务。
-```json
-{"type": "login", "client_id": "xxx", "token": "yyy", "services": [{"local_port":22, "remote_port":6222}, {"local_port":8080, "remote_port":65080}]}
-{"type": "new_conn", "conn_id": "abc123", "proxy_name": "web1"}
+# Start client
+./gotunnel-client
 ```
-- 自动生成或手动指定 client_id，支持大规模节点注册。
 
-### 2. 数据通道协议（Data Channel）
-- 业务流量建立后即为标准裸 TCP/HTTP 透传，不限制节点数量与访问并发。
+## 📚 Documentation
 
-### 3. 控制/数据分离优势
-- 支持多客户端高并发和自动扩展。
-- 节点增删、服务注册、连接管理均可热更新，不停服动态扩容。
+Complete documentation is available in [doc/](./doc/) directory:
 
----
+**Language:** [English](./doc/en/00-README.md) | [中文](./doc/zh/00-README.md)
 
-## 四、安全机制
-- TLS 加密、批量认证、支持大规模多节点安全通信。
-- 支持标签、分组、批量配置及自动发现，适合自动化和云原生场景。
+- **[Quick Start](./doc/en/01-QUICKSTART.md)** - Get started in 5 minutes
+- **[Configuration Guide](./doc/en/02-CONFIG.md)** - Detailed configuration options
+- **[Architecture Design](./doc/en/03-ARCHITECTURE.md)** - System architecture documentation
+- **[Protocol Documentation](./doc/en/04-PROTOCOL.md)** - Communication protocol details
+- **[Development Guide](./doc/en/05-DEVELOPMENT.md)** - Developer documentation
+- **[Troubleshooting Guide](./doc/en/06-TROUBLESHOOTING.md)** - Common issues and solutions
 
----
+## Core Features
 
-## 五、开发计划（建议里程碑）
-1. 多节点高并发架构和目录维护设计
-2. 大量客户端长连接与批量服务注册支持
-3. 控制/数据通道并发优化与弹性扩容
-4. 云原生友好配置、K8s/自动化批量部署
-5. 全面安全控制与监控日志模块优化
+- ✅ TCP/HTTP protocol tunneling support
+- ✅ Control channel + data channel separated architecture
+- ✅ Heartbeat keepalive + auto-reconnect mechanism
+- ✅ Port health probe + auto offline/online
+- ✅ Multi-client concurrent support
+- ✅ Complete unit tests (89% coverage)
 
----
+## Project Status
 
-## 六、参考资料
-- frp: https://github.com/fatedier/frp
-- ngrok: https://ngrok.com 
-- lanproxy: https://github.com/ffay/lanproxy
-- Go net & tls 文档、Kubernetes Operator 等相关资料
+- ✅ Phase 1: Core functionality implementation (Completed)
+- 🚧 Phase 2: Web Management UI (Planned)
+- 📋 Phase 3: Cloud-native extensions (Planned)
 
----
-如需 K8s DaemonSet/Deployment 批量自动部署、注册脚本、监控平台对接等细节，可随时补充需求！
+## Reference Projects
+
+- [frp](https://github.com/fatedier/frp) - High-performance reverse proxy application
+- [ngrok](https://ngrok.com) - Intranet penetration service
+- [lanproxy](https://github.com/ffay/lanproxy) - Java-based intranet penetration tool
+
+## License
+
+GPL-2.0 License

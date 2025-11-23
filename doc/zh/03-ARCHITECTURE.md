@@ -1,5 +1,7 @@
 # gotunnel 架构设计与关键注意事项
 
+**Language:** [English](../en/03-ARCHITECTURE.md) | [中文](./03-ARCHITECTURE.md)
+
 ## 一、整体架构思想
 - 服务端与多个客户端维持长连接，实现统一控制和数据转发。
 - 支持海量客户端并发注册，适配云原生/K8s 场景。
