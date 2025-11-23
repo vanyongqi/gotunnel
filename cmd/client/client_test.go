@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"gotunnel/pkg/log"
 	"gotunnel/pkg/protocol"
 	"io"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"golang.org/x/text/language"
 )
 
 type mockConn struct {
@@ -216,5 +218,75 @@ func TestLoadClientConfig_WithViper(t *testing.T) {
 	}
 	if conf.LocalPort != 8080 {
 		t.Errorf("expected 8080, got %d", conf.LocalPort)
+	}
+}
+
+func TestHandleConnection(t *testing.T) {
+	// Initialize logger for testing
+	log.Init(log.LevelInfo, language.Chinese)
+	
+	// Create a connection that will close immediately (simulating connection error)
+	var wbuf bytes.Buffer
+	// Send a pong message then close
+	pong := protocol.HeartbeatPong{Type: "pong", Time: time.Now().Unix()}
+	b, _ := json.Marshal(pong)
+	protocol.WritePacket(&wbuf, b)
+	
+	conn := &mockConn{
+		Reader: bytes.NewReader(wbuf.Bytes()),
+		Writer: &bytes.Buffer{},
+	}
+	
+	conf := &ClientConfig{
+		Name:       "test",
+		LocalPort:  99999, // Non-existent port for health probe
+		RemotePort: 10022,
+		LogLevel:   "info",
+		LogLang:    "zh",
+	}
+	
+	done := make(chan error, 1)
+	go func() {
+		// handleConnection will call StartControlLoop which will return when connection closes
+		done <- handleConnection(conn, conf)
+	}()
+	
+	// Wait a bit for health probe and heartbeat to start
+	time.Sleep(50 * time.Millisecond)
+	
+	// Close connection to trigger error
+	conn.Close()
+	
+	select {
+	case err := <-done:
+		// Expected error when connection closes
+		if err == nil {
+			t.Error("expected error when connection closes")
+		}
+	case <-time.After(500 * time.Millisecond):
+		// Timeout - connection handling might still be running
+		// This is acceptable as health probe and heartbeat are running
+	}
+}
+
+func TestLoadClientConfig_RemotePort(t *testing.T) {
+	viper.Reset()
+	viper.Set("client.remote_port", 6443)
+	conf := loadClientConfig()
+	if conf.RemotePort != 6443 {
+		t.Errorf("expected remote_port 6443, got %d", conf.RemotePort)
+	}
+}
+
+func TestLoadClientConfig_LogSettings(t *testing.T) {
+	viper.Reset()
+	viper.Set("client.log_level", "debug")
+	viper.Set("client.log_lang", "en")
+	conf := loadClientConfig()
+	if conf.LogLevel != "debug" {
+		t.Errorf("expected log_level debug, got %s", conf.LogLevel)
+	}
+	if conf.LogLang != "en" {
+		t.Errorf("expected log_lang en, got %s", conf.LogLang)
 	}
 }

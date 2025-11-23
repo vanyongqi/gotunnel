@@ -108,3 +108,52 @@ func TestHeartbeatPingStruct(t *testing.T) {
 		t.Error("HeartbeatPing序列化异常")
 	}
 }
+
+func TestWritePacketError(t *testing.T) {
+	// Test write error
+	ew := &errorWriter{}
+	err := WritePacket(ew, []byte("test"))
+	if err == nil {
+		t.Error("WritePacket should return error on write failure")
+	}
+}
+
+func TestReadPacketError(t *testing.T) {
+	// Test read error
+	er := &errorReader{}
+	_, err := ReadPacket(er)
+	if err == nil {
+		t.Error("ReadPacket should return error on read failure")
+	}
+}
+
+func TestReadPacketIncompleteLength(t *testing.T) {
+	// Test incomplete length field
+	buf := bytes.NewBuffer([]byte{0x00, 0x00}) // Only 2 bytes instead of 4
+	_, err := ReadPacket(buf)
+	if err == nil {
+		t.Error("ReadPacket should return error on incomplete length field")
+	}
+}
+
+func TestReadPacketIncompletePayload(t *testing.T) {
+	// Test incomplete payload
+	buf := bytes.NewBuffer([]byte{0x00, 0x00, 0x00, 0x05}) // Length = 5
+	buf.Write([]byte{0x01, 0x02})                         // Only 2 bytes instead of 5
+	_, err := ReadPacket(buf)
+	if err == nil {
+		t.Error("ReadPacket should return error on incomplete payload")
+	}
+}
+
+type errorWriter struct{}
+
+func (e *errorWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write error")
+}
+
+type errorReader struct{}
+
+func (e *errorReader) Read([]byte) (int, error) {
+	return 0, errors.New("read error")
+}
