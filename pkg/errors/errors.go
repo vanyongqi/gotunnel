@@ -1,8 +1,11 @@
 package errors
 
+// Error codes for gotunnel.
 const (
-	ErrConnectFailed = 1001 // 连接服务端失败
-	ErrAuthFailed    = 1002 // 认证失败
+	// ErrConnectFailed indicates a connection failure to the server.
+	ErrConnectFailed = 1001
+	// ErrAuthFailed indicates an authentication failure.
+	ErrAuthFailed = 1002
 	// ...后续可扩展更多错误码
 )
 

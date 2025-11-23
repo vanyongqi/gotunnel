@@ -47,7 +47,8 @@ func (h *HeartbeatManager) StopHeartbeat() {
 	close(h.stopChan)
 }
 
-// 服务端用：检查所有client最后心跳时间，超时回调。需要配合映射表调用。
+// HeartbeatCheckLoop runs a periodic heartbeat check loop for the server.
+// It calls checkFunc every 5 seconds to check client heartbeat status.
 func HeartbeatCheckLoop(checkFunc func()) {
 	for {
 		checkFunc()

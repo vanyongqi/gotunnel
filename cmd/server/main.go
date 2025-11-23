@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Mapping represents a port mapping between a remote port and a local port.
 type Mapping struct {
 	ClientConn    net.Conn
 	LocalPort     int
