@@ -14,6 +14,7 @@ Welcome to the gotunnel documentation center! This contains the complete documen
 - **[05-Development Guide](./05-DEVELOPMENT.md)** - Developer documentation
 - **[06-Troubleshooting Guide](./06-TROUBLESHOOTING.md)** - Common issues and solutions
 - **[07-Design Notes](./07-DESIGN-NOTES.md)** - Design considerations and best practices
+- **[08-Kubernetes Deployment](./08-K8S-DEPLOYMENT.md)** - K8s cross-network deployment guide
 
 ## Quick Navigation
 
