@@ -1,0 +1,72 @@
+name: Manual Release & Auto Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (如 v1.0.0)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release Notes (可选)'
+        required: false
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Set up Environment
+        run: |
+          mkdir dist
+
+      - name: Build for Linux
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o dist/gotunnel-linux-amd64-server ./cmd/server
+          GOOS=linux GOARCH=amd64 go build -o dist/gotunnel-linux-amd64-client ./cmd/client
+
+      - name: Build for Windows
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o dist/gotunnel-windows-amd64-server.exe ./cmd/server
+          GOOS=windows GOARCH=amd64 go build -o dist/gotunnel-windows-amd64-client.exe ./cmd/client
+
+      - name: Build for MacOS (Darwin)
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -o dist/gotunnel-darwin-amd64-server ./cmd/server
+          GOOS=darwin GOARCH=amd64 go build -o dist/gotunnel-darwin-amd64-client ./cmd/client
+
+      - name: Create git tag
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git tag ${{ github.event.inputs.tag_name }}
+          git push origin ${{ github.event.inputs.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release and upload binaries
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag_name }}
+          name: ${{ github.event.inputs.tag_name }}
+          body: ${{ github.event.inputs.release_notes }}
+          files: |
+            dist/gotunnel-linux-amd64-server
+            dist/gotunnel-linux-amd64-client
+            dist/gotunnel-windows-amd64-server.exe
+            dist/gotunnel-windows-amd64-client.exe
+            dist/gotunnel-darwin-amd64-server
+            dist/gotunnel-darwin-amd64-client
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

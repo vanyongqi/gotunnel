@@ -72,11 +72,11 @@ func WritePacket(w io.Writer, payload []byte) error {
 	var lenBuf [4]byte
 	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(payload)))
 	// Write packet length first, then payload content
-	if _, err := w.Write(lenBuf[:]); err != nil {
-		return err
+	if _, err1 := w.Write(lenBuf[:]); err1 != nil {
+		return err1
 	}
-	_, err := w.Write(payload)
-	return err
+	_, err2 := w.Write(payload)
+	return err2
 }
 
 // ReadPacket reads a complete message from the connection, format requirement same as above (4-byte payload length + actual content).
@@ -91,8 +91,8 @@ func WritePacket(w io.Writer, payload []byte) error {
 func ReadPacket(r io.Reader) ([]byte, error) {
 	// Read 4-byte packet length first
 	var lenBuf [4]byte
-	if _, err := io.ReadFull(r, lenBuf[:]); err != nil {
-		return nil, err
+	if _, err1 := io.ReadFull(r, lenBuf[:]); err1 != nil {
+		return nil, err1
 	}
 	length := binary.BigEndian.Uint32(lenBuf[:])
 	if length == 0 {
@@ -100,8 +100,8 @@ func ReadPacket(r io.Reader) ([]byte, error) {
 	}
 	// Read actual message content according to length
 	buf := make([]byte, length)
-	if _, err := io.ReadFull(r, buf); err != nil {
-		return nil, err
+	if _, err2 := io.ReadFull(r, buf); err2 != nil {
+		return nil, err2
 	}
 	return buf, nil
 }

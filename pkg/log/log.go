@@ -92,13 +92,13 @@ func GetLanguage() language.Tag {
 // loadTranslations loads translation files from embedded filesystem
 func loadTranslations() {
 	// Load Chinese translations
-	if data, err := i18nFiles.ReadFile("i18n/active.zh.toml"); err == nil {
-		bundle.MustParseMessageFileBytes(data, "active.zh.toml")
+	if dataZh, errZh := i18nFiles.ReadFile("i18n/active.zh.toml"); errZh == nil {
+		bundle.MustParseMessageFileBytes(dataZh, "active.zh.toml")
 	}
 
 	// Load English translations
-	if data, err := i18nFiles.ReadFile("i18n/active.en.toml"); err == nil {
-		bundle.MustParseMessageFileBytes(data, "active.en.toml")
+	if dataEn, errEn := i18nFiles.ReadFile("i18n/active.en.toml"); errEn == nil {
+		bundle.MustParseMessageFileBytes(dataEn, "active.en.toml")
 	}
 }
 
