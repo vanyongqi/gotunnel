@@ -23,12 +23,16 @@ It enables safe remote access and management of internal network services via a 
 <div align="center">
   <table>
     <tr>
-      <td align="center">
-        <img src="doc/image/gotunnel-http.gif" alt="gotunnel http demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
+      <td align="center" style="vertical-align:middle;">
+        <div style="width:400px;height:270px;overflow:hidden;display:flex;justify-content:center;align-items:center;background:#f2f2f2;border-radius:8px;">
+          <img src="doc/image/gotunnel-http.gif" alt="gotunnel http demo" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" />
+        </div>
         <div style="font-size:16px; margin-top:8px;">HTTP Demo</div>
       </td>
-      <td align="center">
-        <img src="doc/image/gotunnel-ssh.gif" alt="gotunnel ssh demo" width="400" height="270" style="object-fit:cover;border-radius:8px;" />
+      <td align="center" style="vertical-align:middle;">
+        <div style="width:400px;height:270px;overflow:hidden;display:flex;justify-content:center;align-items:center;background:#f2f2f2;border-radius:8px;">
+          <img src="doc/image/gotunnel-ssh.gif" alt="gotunnel ssh demo" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" />
+        </div>
         <div style="font-size:16px; margin-top:8px;">SSH Demo</div>
       </td>
     </tr>
