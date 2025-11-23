@@ -34,6 +34,7 @@ client:
 | client.token  | yes      | Client token (auth, same as server) |
 | client.server_addr | yes  | Server endpoint                     |
 | client.local_ports | yes  | Ports to expose (list)              |
+| client.remote_port | no   | Remote port on server (default: 10022) |
 
 **Tip:** Token security is crucial! Use strong random strings.
 

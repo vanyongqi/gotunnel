@@ -55,7 +55,10 @@ func loadClientConfig() *ClientConfig {
 			}
 		}
 	}
-	remotePort := 10022 // 可以通过配置扩展
+	remotePort := 10022 // 默认值
+	if viper.IsSet("client.remote_port") {
+		remotePort = viper.GetInt("client.remote_port")
+	}
 	return &ClientConfig{
 		Name:       name,
 		Token:      token,

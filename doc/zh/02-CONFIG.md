@@ -53,6 +53,7 @@ client:
   token: "changeme"              # 认证token，必须与服务端一致
   server_addr: "127.0.0.1:17000" # 服务端地址
   local_ports: [22]              # 要映射的本地端口列表
+  remote_port: 10022             # 服务端对外暴露的远程端口
 ```
 
 ### 参数详解
@@ -63,6 +64,7 @@ client:
 | `token` | string | **是** | 无 | 认证token，必须与服务端一致 |
 | `server_addr` | string | **是** | 无 | 服务端地址，格式：`IP:端口` |
 | `local_ports` | array | **是** | 无 | 要映射的本地端口列表，如 `[22, 8080]` |
+| `remote_port` | int | 否 | `10022` | 服务端对外暴露的远程端口，客户端通过此端口访问本地服务 |
 
 ### 配置示例
 
@@ -73,6 +75,17 @@ client:
   token: "your-secret-token"
   server_addr: "120.120.120.120:17000"
   local_ports: [8080]
+  remote_port: 10080  # 通过 120.120.120.120:10080 访问本地 8080
+```
+
+**K8s 场景（映射 kube-apiserver）：**
+```yaml
+client:
+  name: "k8s-controller-apiserver"
+  token: "your-secret-token"
+  server_addr: "120.120.120.120:17000"
+  local_ports: [6443]
+  remote_port: 6443  # 通过 120.120.120.120:6443 访问本地 kube-apiserver
 ```
 
 **多端口映射：**
@@ -82,6 +95,7 @@ client:
   token: "your-secret-token"
   server_addr: "120.120.120.120:17000"
   local_ports: [22, 3306, 8080, 9090]
+  # 注意：当前版本只支持一个端口映射，多端口需要运行多个实例
 ```
 
 ## 四、高级配置
