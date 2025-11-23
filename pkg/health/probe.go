@@ -10,7 +10,7 @@ import (
 func ProbeTCPAlive(addr string, timeout time.Duration) bool {
 	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err == nil {
-		conn.Close()
+		_ = conn.Close()
 		return true
 	}
 	return false

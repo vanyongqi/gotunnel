@@ -34,10 +34,6 @@ type errorReader struct{}
 
 func (e *errorReader) Read([]byte) (int, error) { return 0, errors.New("read error") }
 
-type errorWriter struct{}
-
-func (e *errorWriter) Write([]byte) (int, error) { return 0, errors.New("write error") }
-
 func TestLoadServerConfig(t *testing.T) {
 	viper.Reset()
 	conf := loadServerConfig()

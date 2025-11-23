@@ -173,7 +173,7 @@ func handleConnection(conn net.Conn, conf *ClientConfig) error {
 	// 启动心跳包 goroutine
 	heartbeatStop := StartHeartbeat(conn, time.Duration(heartbeatInterval)*time.Second, func() {
 		fmt.Println("[gotunnel][client] 心跳超时，触发重连...")
-		conn.Close()
+		_ = conn.Close()
 	})
 	defer heartbeatStop()
 
@@ -185,7 +185,9 @@ func handleConnection(conn net.Conn, conf *ClientConfig) error {
 				fmt.Printf("[gotunnel][client] 本地端口%d健康丢失，发起offline_port\n", conf.LocalPort)
 				req := protocol.OfflinePortRequest{Type: "offline_port", Port: conf.RemotePort}
 				b, _ := json.Marshal(req)
-				protocol.WritePacket(conn, b)
+				if err := protocol.WritePacket(conn, b); err != nil {
+					fmt.Printf("[gotunnel][client] 发送offline_port失败: %v\n", err)
+				}
 				healthDown = true
 			}
 		},
@@ -194,7 +196,9 @@ func handleConnection(conn net.Conn, conf *ClientConfig) error {
 				fmt.Printf("[gotunnel][client] 本地端口%d恢复，发起online_port\n", conf.LocalPort)
 				req := protocol.OnlinePortRequest{Type: "online_port", Port: conf.RemotePort}
 				b, _ := json.Marshal(req)
-				protocol.WritePacket(conn, b)
+				if err := protocol.WritePacket(conn, b); err != nil {
+					fmt.Printf("[gotunnel][client] 发送online_port失败: %v\n", err)
+				}
 				healthDown = false
 			}
 		},
@@ -215,7 +219,7 @@ func main() {
 			continue
 		}
 		if err := RegisterPort(conn, conf); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			fmt.Println("[gotunnel][client] 端口注册失败:", err)
 			time.Sleep(3 * time.Second)
 			continue
@@ -224,11 +228,11 @@ func main() {
 
 		if err := handleConnection(conn, conf); err != nil {
 			fmt.Println("[gotunnel][client] 控制通道断开，自动重连:", err)
-			conn.Close()
+			_ = conn.Close()
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		conn.Close()
+		_ = conn.Close()
 		time.Sleep(3 * time.Second)
 	}
 }

@@ -10,10 +10,10 @@ import (
 func RelayConn(a, b net.Conn) {
 	// a->b
 	go func() {
-		io.Copy(b, a)
-		b.Close()
+		_, _ = io.Copy(b, a)
+		_ = b.Close()
 	}()
 	// b->a
-	io.Copy(a, b)
-	a.Close()
+	_, _ = io.Copy(a, b)
+	_ = a.Close()
 }

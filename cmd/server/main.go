@@ -81,7 +81,7 @@ func checkClientHeartbeat() {
 	for port, m := range mappingTable {
 		if now.Sub(m.LastHeartbeat) > time.Duration(heartbeatTimeout)*time.Second {
 			fmt.Printf("[gotunnel][server] 客户端端口 %d 心跳超时，主动关掉映射\n", port)
-			m.ClientConn.Close()
+			_ = m.ClientConn.Close()
 			delete(mappingTable, port)
 		}
 	}
@@ -89,7 +89,7 @@ func checkClientHeartbeat() {
 
 // 控制通道，注册、心跳包等
 func handleControlConn(conn net.Conn, serverToken string) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	var regdRemotePort, regdLocalPort int
 	var listenDone chan struct{} = nil
 	// 读取注册消息
@@ -103,7 +103,9 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	if reg.Token != serverToken {
 		resp := protocol.RegisterResponse{Type: "register_resp", Status: "fail", Reason: "鉴权失败"}
 		msg, _ := json.Marshal(resp)
-		protocol.WritePacket(conn, msg)
+		if err := protocol.WritePacket(conn, msg); err != nil {
+			fmt.Printf("[server] 发送拒绝响应失败: %v\n", err)
+		}
 		fmt.Println("[server] token校验失败，已拒绝", reg.Name)
 		return
 	}
@@ -114,7 +116,10 @@ func handleControlConn(conn net.Conn, serverToken string) {
 	fmt.Printf("[gotunnel][server] 注册成功，公网端口 %d => 内网 %d\n", regdRemotePort, regdLocalPort)
 	resp := protocol.RegisterResponse{Type: "register_resp", Status: "ok"}
 	msg, _ := json.Marshal(resp)
-	protocol.WritePacket(conn, msg)
+	if err := protocol.WritePacket(conn, msg); err != nil {
+		fmt.Printf("[server] 发送注册响应失败: %v\n", err)
+		return
+	}
 
 	listenDone = make(chan struct{})
 	go listenAndForwardWithStop(regdRemotePort, conn, regdLocalPort, listenDone)
@@ -135,7 +140,10 @@ func handleControlConn(conn net.Conn, serverToken string) {
 			mappingTableMu.Unlock()
 			pong := protocol.HeartbeatPong{Type: "pong", Time: time.Now().Unix()}
 			b, _ := json.Marshal(pong)
-			protocol.WritePacket(conn, b)
+			if err := protocol.WritePacket(conn, b); err != nil {
+				fmt.Printf("[server] 发送心跳响应失败: %v\n", err)
+				break
+			}
 			continue
 		}
 		// offline_port 处理
@@ -190,14 +198,18 @@ func listenAndForwardWithStop(remotePort int, clientConn net.Conn, localPort int
 	for {
 		select {
 		case <-stop:
-			ln.Close()
+			_ = ln.Close()
 			fmt.Printf("[server] 停止公网端口监听:%d(健康探针下线)\n", remotePort)
 			return
 		case userConn := <-acceptCh:
 			go func() {
 				req := protocol.RegisterRequest{Type: "open_data_channel", LocalPort: localPort}
 				reqBytes, _ := json.Marshal(req)
-				protocol.WritePacket(clientConn, reqBytes)
+				if err := protocol.WritePacket(clientConn, reqBytes); err != nil {
+					fmt.Printf("[server] 发送数据通道指令失败: %v\n", err)
+					_ = userConn.Close()
+					return
+				}
 				core.RelayConn(userConn, clientConn)
 			}()
 		}
