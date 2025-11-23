@@ -1,3 +1,5 @@
+[![CI](https://github.com/vanyongqi/gotunnel/actions/workflows/test.yaml/badge.svg)](https://github.com/vanyongqi/gotunnel/actions)
+[![codecov](https://codecov.io/gh/vanyongqi/gotunnel/branch/main/graph/badge.svg)](https://codecov.io/gh/vanyongqi/gotunnel)
 # gotunnel
 
 gotunnel is a high-performance intranet penetration (Tunnel/Proxy) tool implemented in Go, inspired by frp and ngrok. It enables secure and efficient remote access and management of any number of internal network service nodes through cloud servers.
